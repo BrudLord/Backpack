@@ -2,6 +2,8 @@
 
 ![](https://github.com/BrudLord/Knapsack/blob/task/AA-Arch/docs/architecture/architecture-diagram.png)
 
+[Описание каждого компонента](https://github.com/BrudLord/Knapsack/blob/task/AA-Arch/docs/architecture/architecture-components.md)
+
 ## Библиотека 
 Наша библиотека предоставляет наружу ряд функций, для решения задачи о рюкзаке. 
 Все предоставляемые методы доступны из Atgorithms API. Внутренняя логика, при этом описывается в Algorithms Service, который в свою очередь объединяет описанные в разных файлах реализации алгоритмов.. 
