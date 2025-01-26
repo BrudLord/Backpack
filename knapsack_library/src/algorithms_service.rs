@@ -1,4 +1,5 @@
-use crate::algorithms_impls::full_iteration_with_recursion::knapsack_solve;
+use crate::algorithms_impls::full_iteration_with_recursion::RecursiveKnapsackSolver;
+use crate::algorithms_impls::knapsack_solver::KnapsackSolver;
 use crate::models::knapsack::Knapsack;
 
 pub struct AlgorithmsService;
@@ -8,9 +9,23 @@ impl AlgorithmsService {
         Self
     }
 
-    pub fn solve(&self, knapsack: &mut Knapsack) -> u32 {
-        let mut best_value: u32 = 0;
-        knapsack_solve(knapsack, 0, &mut best_value);
-        return best_value;
+    pub fn get_all_algorithms(&self) -> Vec<Box<dyn KnapsackSolver>> {
+        vec![
+            Box::new(RecursiveKnapsackSolver),
+        ]
+    }
+
+    pub fn solve(&self, knapsack: &mut Knapsack, name: String) -> Option<u32> {
+        for algorithm in self.get_all_algorithms() {
+            if algorithm.get_name() == name {
+                return Some(algorithm.solve(knapsack));
+            }
+        }
+        None
+    }
+    
+
+    pub fn get_algorithms_names() -> Vec<String> {
+        vec!["Full iteration with recursion".to_string()]
     }
 }
