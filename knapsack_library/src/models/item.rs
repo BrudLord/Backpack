@@ -1,4 +1,9 @@
-#[derive(Debug)]
+use serde::{Serialize, Deserialize};
+
+
+#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub struct Item {
     weight: u32,
     value: u32,
