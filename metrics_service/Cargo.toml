@@ -1,0 +1,11 @@
+[package]
+name = "metrics_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+knapsack_library = { path = "../knapsack_library" }
+rand = "0.8.4"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+cap = "0.1.2"

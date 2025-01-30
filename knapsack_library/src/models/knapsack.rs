@@ -1,8 +1,10 @@
 use crate::models::item::Item;
+use serde::{Serialize, Deserialize};
 
 
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub struct Knapsack {
     capacity: u32,
     items: Vec<Item>,
