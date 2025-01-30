@@ -5,14 +5,6 @@ use knapsack_library::models::knapsack::Knapsack;
 use std::collections::HashMap;
 use std::fs;
 
-fn knapsack_sample() -> Knapsack {
-    let item1 = Item::new(5, 10);
-    let item2 = Item::new(3, 7);
-    let item3 = Item::new(2, 5);
-
-    Knapsack::new(10, vec![item1, item2, item3])
-}
-
 fn sample_experiment_unit() -> ExperimentUnit {
     let knapsack = Knapsack::new(
         100,
@@ -36,7 +28,6 @@ fn sample_experiment_unit() -> ExperimentUnit {
     }
 }
 #[cfg(test)]
-
 #[test]
 fn test_log_to_file() {
     let temp_file = "test_log.txt";
@@ -49,7 +40,6 @@ fn test_log_to_file() {
     assert!(contents.contains("test_metric"));
     assert!(contents.contains("result"));
 }
-
 
 #[test]
 fn test_log_batch_sequential() {

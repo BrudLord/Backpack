@@ -1,4 +1,6 @@
-/target
-Cargo.lock
+*/target
+*/Cargo.lock
+/metrics_service/*.txt
+/experimentator/results.txt
 /.idea/
 .vscode
