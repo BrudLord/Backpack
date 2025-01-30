@@ -1,5 +1,5 @@
 */target
 */Cargo.lock
-*/test_log.txt
+/metrics_service/*.txt
 /.idea/
 .vscode
