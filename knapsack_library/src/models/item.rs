@@ -13,7 +13,8 @@ impl Item {
     pub fn new(weight: u32, value: u32) -> Self {
         Self { weight, value }
     }
-
+    
+    #[allow(dead_code)]
     fn display(&self) {
         println!("Item: weight = {}, value = {}", self.weight, self.value);
     }

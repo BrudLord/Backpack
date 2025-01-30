@@ -1,4 +1,3 @@
-use crate::logger::Logger;
 use crate::metrics_service::{ExperimentUnit, MetricService, MetricsUnit};
 use knapsack_library::algorithms_service::AlgorithmsService;
 use knapsack_library::models::item::Item;
@@ -62,10 +61,10 @@ fn test_experiment_unit_creation() {
 #[test]
 fn test_conduct_experiment_with_algorithms() {
     let knapsack = k1();
-    let mut service: AlgorithmsService = AlgorithmsService::new();
+    let service: AlgorithmsService = AlgorithmsService::new();
     let algo_names = AlgorithmsService::get_algorithms_names();
-    let mut metricService = MetricService::new(Some("out.txt"));
-    metricService.conduct_experiment(
+    let mut metric_service = MetricService::new(Some("out.txt"));
+    metric_service.conduct_experiment(
         |s, k| service.solve(s, k),
         &knapsack,
         &algo_names,
@@ -74,20 +73,21 @@ fn test_conduct_experiment_with_algorithms() {
     fs::remove_file("out.txt").unwrap();
 }
 
+#[test]
 fn test_conduct_experiment_with_aggregation() {
     let knapsack = k1();
     let knapsack2 = k2();
-    let mut service: AlgorithmsService = AlgorithmsService::new();
+    let service: AlgorithmsService = AlgorithmsService::new();
 
     let algo_names = AlgorithmsService::get_algorithms_names();
 
-    let mut metricService = MetricService::new(Some("outs.txt"));
-    let out = metricService.conduct_batch_experiment(
+    let mut metric_service = MetricService::new(Some("outs.txt"));
+    let out = metric_service.conduct_batch_experiment(
         |s, k| service.solve(s, k),
         vec![&knapsack, &knapsack2],
         &algo_names,
     );
-    metricService.agreggate(out);
+    metric_service.agreggate(out);
     fs::remove_file("outs.txt").unwrap();
 }
 
@@ -138,7 +138,7 @@ fn test_aggregation() {
 
     let mut rr = Vec::new();
     for i in 0..10 {
-        let mut e = ExperimentUnit::new("exp".to_string(), &knapsack.clone());
+        let e: ExperimentUnit;
         if i as u32 % 2 == 0 {
             e = ExperimentUnit {
                 experiment_name: "exp".to_string(),

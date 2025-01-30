@@ -1,5 +1,5 @@
-use crate::models::knapsack::Knapsack;
 use crate::algorithms_impls::knapsack_solver::KnapsackSolver;
+use crate::models::knapsack::Knapsack;
 
 pub struct RecursiveKnapsackSolver;
 
@@ -8,12 +8,18 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
         "Full iteration with recursion".to_string()
     }
 
-    fn solve(&self, knapsack: &mut Knapsack) -> u32 {
+    fn solve(&self, knapsack: &Knapsack) -> u32 {
         let mut best_value = 0;
 
-        fn recursive(knapsack: &mut Knapsack, index: usize, current_weight: u32, current_value: u32, best_value: &mut u32) {
+        fn recursive(
+            knapsack: &Knapsack,
+            index: usize,
+            current_weight: u32,
+            current_value: u32,
+            best_value: &mut u32,
+        ) {
             if index > knapsack.get_items_len() {
-                return
+                return;
             }
 
             if index == knapsack.get_items_len() {
@@ -23,15 +29,21 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
                 return;
             }
 
-            recursive(knapsack, index + 1, current_weight, current_value, best_value);
-            
+            recursive(
+                knapsack,
+                index + 1,
+                current_weight,
+                current_value,
+                best_value,
+            );
+
             if current_weight + knapsack.get_item(index).get_weight() <= knapsack.get_capacity() {
                 recursive(
-                    knapsack, 
-                    index + 1, 
-                    current_weight + knapsack.get_item(index).get_weight(), 
-                    current_value + knapsack.get_item(index).get_value(), 
-                    best_value
+                    knapsack,
+                    index + 1,
+                    current_weight + knapsack.get_item(index).get_weight(),
+                    current_value + knapsack.get_item(index).get_value(),
+                    best_value,
                 );
             }
         }

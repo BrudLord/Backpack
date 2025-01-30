@@ -8,8 +8,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_and_test:
-    name: Rust project - latest
+  test_knapsack_library:
+    name: Test knapsack_library
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,5 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose
-      - run: cargo test --verbose
+      - run: cd knapsack_library && cargo build --verbose
+      - run: cd knapsack_library && cargo test --verbose
+
+  test_metrics_service:
+    name: Test metrics_service
+    runs-on: ubuntu-latest
+    needs: test_knapsack_library
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cd metrics_service && cargo build --verbose
+      - run: cd metrics_service && cargo test --verbose

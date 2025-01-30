@@ -1,0 +1,2 @@
+{"experiment_name":"exp","knapsack":{"capacity":100,"items":[{"weight":60,"value":10},{"weight":100,"value":20},{"weight":120,"value":30}]},"metrics":{"test_metric":{"result":200,"execution_time":1.23,"memory_usage":1024}}}
+
