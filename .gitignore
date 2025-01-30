@@ -1,5 +1,4 @@
-/target
-/experimentator/target
-Cargo.lock
+*/target
+*/Cargo.lock
 /.idea/
 .vscode
