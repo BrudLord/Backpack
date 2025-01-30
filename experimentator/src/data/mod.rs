@@ -1,2 +1,2 @@
-pub mod config_manager;
+mod config_manager;
 pub mod manager;

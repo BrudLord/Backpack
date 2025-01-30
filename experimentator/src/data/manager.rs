@@ -8,12 +8,19 @@ use std::path::Path;
 pub struct DataManager;
 
 impl DataManager {
-    pub fn create_knapsack_from_config<P: AsRef<Path>>(path: P) -> Result<Knapsack, String> {
-        let config = DataConfigManager::read_config(path)?;
-        Ok(DataManager::generate_knapsack(config))
+    pub fn generate_rnd_knapsacks<P: AsRef<Path>>(path: P) -> Result<Vec<Knapsack>, String> {
+        let config: Vec<ExperimentConfig> = DataConfigManager::read_rand_config(path)?;
+
+        let mut knapsacks: Vec<Knapsack> = Vec::new();
+
+        for exp_conf in config {
+            knapsacks.push(DataManager::generate_knapsack(exp_conf));
+        }
+
+        Ok(knapsacks)
     }
 
-    pub fn generate_knapsack(config: ExperimentConfig) -> Knapsack {
+    fn generate_knapsack(config: ExperimentConfig) -> Knapsack {
         let mut rng = rand::thread_rng();
         let items: Vec<Item> = (0..config.num_items)
             .map(|_| {
