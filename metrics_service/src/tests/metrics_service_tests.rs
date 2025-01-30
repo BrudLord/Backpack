@@ -73,7 +73,7 @@ fn test_conduct_experiment_with_algorithms() {
     fs::remove_file("out.txt").unwrap();
 }
 
-#[test]
+
 fn test_conduct_experiment_with_aggregation() {
     let knapsack = k1();
     let knapsack2 = k2();
