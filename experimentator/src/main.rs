@@ -1,7 +1,7 @@
 mod data;
 mod models;
 
-use data::manager::DataManager;
+use data::manager::generate_rnd_knapsacks;
 use knapsack_library::algorithms_service::AlgorithmsService;
 use knapsack_library::models::knapsack::Knapsack;
 use metrics_service::metrics_service::MetricService;
@@ -9,7 +9,7 @@ use metrics_service::metrics_service::MetricService;
 fn main() {
     let config_path = "experiments.json";
     let knapsacks: Vec<Knapsack> =
-        DataManager::generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
+        generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
     let algorithms_service = AlgorithmsService::new();
     let mut metric_service = MetricService::new(Some("results.txt"));

@@ -9,3 +9,4 @@ metrics_service= { path = "../metrics_service" }
 rand = "0.8.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+tempfile = "3.16.0"
