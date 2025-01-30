@@ -15,7 +15,7 @@ impl AlgorithmsService {
         ]
     }
 
-    pub fn solve(&self, knapsack: &mut Knapsack, name: String) -> Option<u32> {
+    pub fn solve(&self, name: String, knapsack: &Knapsack) -> Option<u32> {
         for algorithm in self.get_all_algorithms() {
             if algorithm.get_name() == name {
                 return Some(algorithm.solve(knapsack));
@@ -26,6 +26,6 @@ impl AlgorithmsService {
     
 
     pub fn get_algorithms_names() -> Vec<String> {
-        vec!["Full iteration with recursion".to_string()]
+        vec!["Recursion".to_string()]
     }
 }
