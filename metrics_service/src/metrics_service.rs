@@ -62,6 +62,7 @@ pub struct MetricService {
 
 impl MetricService {
     pub fn new(file_path: Option<&str>) -> Self {
+        ALLOCATOR.set_limit(30 * 1024 * 1024).unwrap();
         let logger = Logger::new(!file_path.is_none(), file_path).unwrap();
         Self { logger }
     }
