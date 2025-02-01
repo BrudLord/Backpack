@@ -90,7 +90,12 @@ impl MetricService {
                 let q2 = ALLOCATOR.allocated();
                 let execution_time = start_time.elapsed().as_secs_f64();
 
-                let memory_usage = q2 - q1;
+                let memory_used = if q2 >= q1 {
+                    q2 - q1
+                } else {
+                    println!("Warning: possible overflow detected.");
+                    (Wrapping(q2) - Wrapping(q1)).0
+                };
                 return (
                     name.clone(),
                     (result, Some(execution_time), Some(memory_usage)).into(),
