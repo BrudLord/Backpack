@@ -98,7 +98,7 @@ impl MetricService {
                 };
                 return (
                     name.clone(),
-                    (result, Some(execution_time), Some(memory_usage)).into(),
+                    (result, Some(execution_time), Some(memory_used)).into(),
                 );
             })
             .collect();
