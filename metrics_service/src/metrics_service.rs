@@ -6,6 +6,7 @@ use std::alloc;
 use std::collections::{HashMap, HashSet};
 use std::convert::From;
 use std::time::Instant;
+use std::num::Wrapping;
 
 #[global_allocator]
 static ALLOCATOR: Cap<alloc::System> = Cap::new(alloc::System, usize::max_value());
