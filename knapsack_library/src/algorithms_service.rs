@@ -11,7 +11,7 @@ impl AlgorithmsService {
         ]
     }
 
-    pub fn solve(name: String, knapsack: &Knapsack) -> Option<u32> {
+    pub fn solve(name: String, knapsack: &Knapsack) -> Option<u64> {
         for algorithm in AlgorithmsService::get_all_algorithms() {
             if algorithm.get_name() == name {
                 return Some(algorithm.solve(knapsack));
