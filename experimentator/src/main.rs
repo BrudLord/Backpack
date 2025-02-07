@@ -1,5 +1,6 @@
 mod data;
 mod models;
+mod metrics_service; 
 
 use data::manager::generate_rnd_knapsacks;
 use knapsack_library::algorithms_service::AlgorithmsService;
