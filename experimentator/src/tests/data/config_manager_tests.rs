@@ -4,6 +4,21 @@ use std::io::Write;
 use tempfile::tempdir;
 
 #[test]
+/// Tests `read_rand_config` with a valid JSON configuration file.
+///
+/// This test creates a temporary directory and file, writes valid JSON data representing
+/// an experiment configuration to the file, and then calls `read_rand_config`.
+///
+/// # Expected behavior
+///
+/// The function should return `Ok` containing a vector with one `ExperimentConfig` struct.
+/// The fields of the config struct should match the values in the JSON data.
+///
+/// # Error behavior
+///
+/// The test will panic if any of the file operations fail or if the assertions fail.  These
+/// panics indicate a problem with the test setup itself, not necessarily with the
+/// `read_rand_config` function.
 fn test_read_rand_config_valid() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("experiments.json");
@@ -29,6 +44,20 @@ fn test_read_rand_config_valid() {
 }
 
 #[test]
+/// Tests `read_rand_config` with an invalid JSON configuration file.
+///
+/// This test creates a temporary directory and file, writes invalid JSON data to the file,
+/// and then calls `read_rand_config`.
+///
+/// # Expected behavior
+///
+/// The function should return `Err`.
+///
+/// # Error behavior
+///
+/// The test will panic if any of the file operations fail.  These panics indicate a
+/// problem with the test setup itself, not necessarily with the `read_rand_config`
+/// function. The function itself should return an `Err` due to the invalid json.
 fn test_read_rand_config_invalid() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("invalid.json");

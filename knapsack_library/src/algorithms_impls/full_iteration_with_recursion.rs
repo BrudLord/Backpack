@@ -6,7 +6,7 @@ pub struct RecursiveKnapsackSolver;
 // Алгоритм решения задачи о рюкзаке через рекурсивный перебор
 impl KnapsackSolver for RecursiveKnapsackSolver {
     fn get_name(&self) -> String {
-        "Full iteration with recursion".to_string()
+        "Recursion".to_string()
     }
 
     fn solve(&self, knapsack: &Knapsack) -> u32 {
