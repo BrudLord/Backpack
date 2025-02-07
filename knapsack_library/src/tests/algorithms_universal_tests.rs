@@ -12,7 +12,7 @@ fn test_knapsack_all() {
     let mut knapsack = Knapsack::new(10, vec![item1, item2, item3]);
 
     for solver in AlgorithmsService::get_all_algorithms() {
-        assert_eq!(solver.solve(&mut knapsack), 22);
+        assert_eq!(solver.solve(&knapsack), 22);
     }
     
 }
@@ -27,7 +27,7 @@ fn test_knapsack_one_odd() {
     let mut knapsack = Knapsack::new(10, vec![item1, item2, item3]);
 
     for solver in AlgorithmsService::get_all_algorithms() {
-        assert_eq!(solver.solve(&mut knapsack), 17);
+        assert_eq!(solver.solve(&knapsack), 17);
     }
 }
 
@@ -41,6 +41,6 @@ fn test_knapsack_empty() {
     let mut knapsack = Knapsack::new(10, vec![item1, item2, item3]);
 
     for solver in AlgorithmsService::get_all_algorithms() {
-        assert_eq!(solver.solve(&mut knapsack), 0);
+        assert_eq!(solver.solve(&knapsack), 0);
     }
 }

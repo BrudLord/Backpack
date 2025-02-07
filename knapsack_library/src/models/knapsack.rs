@@ -7,12 +7,12 @@ use serde::{Serialize, Deserialize};
 #[derive(PartialEq)]
 // Структура описывающая рюкзак для алгоритмов
 pub struct Knapsack {
-    capacity: u32,
+    capacity: u64,
     items: Vec<Item>,
 }
 
 impl Knapsack {
-    pub fn new(capacity: u32, items: Vec<Item>) -> Self {
+    pub fn new(capacity: u64, items: Vec<Item>) -> Self {
         Self {
             capacity,
             items,
@@ -27,7 +27,7 @@ impl Knapsack {
         &self.items[index]
     }
 
-    pub fn get_capacity(&self) -> u32 {
+    pub fn get_capacity(&self) -> u64 {
         self.capacity
     }
 }

@@ -6,25 +6,18 @@ use serde::{Serialize, Deserialize};
 #[derive(PartialEq)]
 // Структура описывающая предмет лежащий в рюкзаке
 pub struct Item {
-    weight: u32,
-    value: u32,
+    weight: u64,
+    value: u64,
 }
 
 impl Item {
-    pub fn new(weight: u32, value: u32) -> Self {
+    pub fn new(weight: u64, value: u64) -> Self {
         Self { weight, value }
     }
-    
-    #[allow(dead_code)]
-    fn display(&self) {
-        println!("Item: weight = {}, value = {}", self.weight, self.value);
-    }
-
-    pub fn get_weight(&self) -> u32 {
+    pub fn get_weight(&self) -> u64 {
         self.weight
     }
-
-    pub fn get_value(&self) -> u32 {
+    pub fn get_value(&self) -> u64 {
         self.value
     }
 }

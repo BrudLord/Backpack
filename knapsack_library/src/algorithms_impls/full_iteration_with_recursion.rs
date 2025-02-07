@@ -1,4 +1,4 @@
-use crate::algorithms_impls::knapsack_solver::KnapsackSolver;
+use crate::models::knapsack_solver::KnapsackSolver;
 use crate::models::knapsack::Knapsack;
 
 pub struct RecursiveKnapsackSolver;
@@ -9,15 +9,15 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
         "Recursion".to_string()
     }
 
-    fn solve(&self, knapsack: &Knapsack) -> u32 {
+    fn solve(&self, knapsack: &Knapsack) -> u64 {
         let mut best_value = 0;
 
         fn recursive(
             knapsack: &Knapsack,
             index: usize,
-            current_weight: u32,
-            current_value: u32,
-            best_value: &mut u32,
+            current_weight: u64,
+            current_value: u64,
+            best_value: &mut u64,
         ) {
             if index > knapsack.get_items_len() {
                 return;
