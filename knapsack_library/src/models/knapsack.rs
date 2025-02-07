@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone, Debug)]
 #[derive(Serialize, Deserialize)]
 #[derive(PartialEq)]
+// Структура описывающая рюкзак для алгоритмов
 pub struct Knapsack {
     capacity: u32,
     items: Vec<Item>,

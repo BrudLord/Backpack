@@ -5,18 +5,18 @@ use crate::models::knapsack::Knapsack;
 pub struct AlgorithmsService;
 
 impl AlgorithmsService {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self
     }
 
-    pub fn get_all_algorithms(&self) -> Vec<Box<dyn KnapsackSolver>> {
+    pub fn get_all_algorithms() -> Vec<Box<dyn KnapsackSolver>> {
         vec![
             Box::new(RecursiveKnapsackSolver),
         ]
     }
 
-    pub fn solve(&self, name: String, knapsack: &Knapsack) -> Option<u32> {
-        for algorithm in self.get_all_algorithms() {
+    pub fn solve(name: String, knapsack: &Knapsack) -> Option<u32> {
+        for algorithm in AlgorithmsService::get_all_algorithms() {
             if algorithm.get_name() == name {
                 return Some(algorithm.solve(knapsack));
             }

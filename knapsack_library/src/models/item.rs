@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone, Debug)]
 #[derive(Serialize, Deserialize)]
 #[derive(PartialEq)]
+// Структура описывающая предмет лежащий в рюкзаке
 pub struct Item {
     weight: u32,
     value: u32,

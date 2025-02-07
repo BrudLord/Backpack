@@ -3,6 +3,7 @@ use crate::models::knapsack::Knapsack;
 
 pub struct RecursiveKnapsackSolver;
 
+// Алгоритм решения задачи о рюкзаке через рекурсивный перебор
 impl KnapsackSolver for RecursiveKnapsackSolver {
     fn get_name(&self) -> String {
         "Full iteration with recursion".to_string()
@@ -29,6 +30,7 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
                 return;
             }
 
+            // Не стали брать предмет на позиции index
             recursive(
                 knapsack,
                 index + 1,
@@ -37,6 +39,7 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
                 best_value,
             );
 
+            // Взяли предмет на позиции index, если тот влез в рюкзак
             if current_weight + knapsack.get_item(index).get_weight() <= knapsack.get_capacity() {
                 recursive(
                     knapsack,
