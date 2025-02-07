@@ -31,6 +31,12 @@
 
 ---
 
+### Сборка проекта
+- Для сборки библиотеки смотрите [`knapsack_library/README.md`](knapsack_library/README.md)
+- Для сборки тестовой среды смотрите [`experimentator/README.md`](experimentator/README.md)
+
+---
+
 ### Contributing
 
 См. файл [`CONTRIBUTING.md`](CONTRIBUTING.md) для получения дополнительной информации.
