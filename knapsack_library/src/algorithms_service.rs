@@ -23,9 +23,12 @@ impl AlgorithmsService {
         }
         None
     }
-    
+
 
     pub fn get_algorithms_names() -> Vec<String> {
-        vec!["Recursion".to_string()]
+        AlgorithmsService::get_all_algorithms()
+            .into_iter()
+            .map(|algorithm| algorithm.get_name())
+            .collect()
     }
 }

@@ -11,7 +11,10 @@
 ## Доступные функции
 Все функции доступные для вызова являются статическими методами algorithms_service::AlgorithmsService.
 - get_all_algorithms(). Она вызывается без аргументов и возвращает вектор KnapsackSolver
-- solve(name: String, knapsack: &Knapsack). Данная ф
+- solve(name: String, knapsack: &Knapsack). Данная функция принимает название алгоритма и рюкзак на котором его применить. 
+В качестве результата возвращается Option<u32>. Возможные имена алгоритмов:
+  - `Recursion`
+- get_algorithms_names(). Возвращает вектор названий алгоритмов
 
 ### Инструкция по сборке и запуску
 
