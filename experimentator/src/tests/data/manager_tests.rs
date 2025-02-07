@@ -4,6 +4,24 @@ use std::io::Write;
 use tempfile::tempdir;
 
 #[test]
+/// Tests the `generate_rnd_knapsacks` function.
+///
+/// This test creates a temporary file with valid JSON configuration data, then calls
+/// `generate_rnd_knapsacks` to create knapsacks based on that data.
+///
+/// # Expected behavior
+///
+/// The function should return `Ok` containing a vector of `Knapsack` instances. The number
+/// of knapsacks, the number of items within each knapsack, the capacity of each
+/// knapsack, and the weight and value ranges of the items should all match the
+/// configuration data in the JSON file.
+///
+/// # Error behavior
+///
+/// The test will panic if any of the file operations fail.  These panics indicate a
+/// problem with the test setup itself, not necessarily with the
+/// `generate_rnd_knapsacks` function. The function itself should return an `Err` if
+/// the config file is unreadable or contains invalid json.
 fn test_generate_rnd_knapsacks() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("experiments.json");
