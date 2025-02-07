@@ -1,5 +1,6 @@
 mod data;
 mod models;
+mod metrics_service; 
 
 use data::manager::generate_rnd_knapsacks;
 use knapsack_library::algorithms_service::AlgorithmsService;
@@ -8,6 +9,8 @@ use metrics_service::metrics_service::MetricService;
 
 fn main() {
     let config_path = "experiments.json";
+    // Generates knapsacks based on the configuration file
+    // You can find the example of this file is "experiments_example.json"
     let knapsacks: Vec<Knapsack> =
         generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
@@ -20,6 +23,7 @@ fn main() {
         &algorithms_names,
     );
 
+    // Aggregates the results of the batch experiment
     metric_service.agreggate(out);
 
     println!("Results saved in results.txt");
