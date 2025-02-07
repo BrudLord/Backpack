@@ -8,9 +8,9 @@ use metrics_service::metrics_service::MetricService;
 
 fn main() {
     let config_path = "experiments.json";
+    let knapsacks: Vec<Knapsack> =
         generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
-    let algorithms_service = new();
     let mut metric_service = MetricService::new(Some("results.txt"));
 
     let algorithms_names = AlgorithmsService::get_algorithms_names();
