@@ -51,11 +51,11 @@ fn generate_knapsack(config: ExperimentConfig) -> Knapsack {
     let items: Vec<Item> = (0..config.num_items)
         .map(|_| {
             Item::new(
-                rng.gen_range(config.weights_range.0..=config.weights_range.1),
-                rng.gen_range(config.costs_range.0..=config.costs_range.1),
+                rng.gen_range(config.weights_range.0..=config.weights_range.1) as u64,
+                rng.gen_range(config.costs_range.0..=config.costs_range.1) as u64,
             )
         })
         .collect();
 
-    Knapsack::new(config.capacity, items)
+        Knapsack::new(config.capacity as u64, items)
 }
