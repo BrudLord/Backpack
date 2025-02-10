@@ -4,141 +4,91 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
 
-/// Represents different types of reporters for output handling
-pub enum ReporterType {
-    /// File-based reporter that writes to a specified file
-    File(FileReporter),
-    /// Console-based reporter that writes to stdout
-    Console(ConsoleReporter),
+/// A reporter that handles output to either a file or console.
+///
+/// This struct provides methods to write formatted data, JSON, and batches of data
+/// to either a file or standard output.
+pub struct Reporter {
+    output: Mutex<Output>,
 }
 
-impl ReporterType {
-    /// Reports formatted data using the Display trait
-    ///
-    /// # Arguments
-    /// * `data` - The data to be reported implementing Display trait
-    pub fn report<T: std::fmt::Display>(&self, data: &T) {
-        match self {
-            ReporterType::File(r) => r.report(data),
-            ReporterType::Console(r) => r.report(data),
-        }
-    }
-
-    /// Reports data in JSON format
-    ///
-    /// # Arguments
-    /// * `data` - The data to be serialized and reported
-    pub fn report_json<T: Serialize>(&self, data: &T) {
-        match self {
-            ReporterType::File(r) => r.report_json(data),
-            ReporterType::Console(r) => r.report_json(data),
-        }
-    }
-
-    /// Reports a batch of items in JSON format
-    ///
-    /// # Arguments
-    /// * `items` - Slice of items to be reported
-    pub fn report_batch<T: Serialize>(&self, items: &[T]) {
-        match self {
-            ReporterType::File(r) => r.report_batch(items),
-            ReporterType::Console(r) => r.report_batch(items),
-        }
-    }
+/// Represents the output destination for the reporter.
+enum Output {
+    /// File output with an open file handle
+    File(File),
+    /// Standard console output
+    Console,
 }
 
-/// File-based reporter that writes output to a file or stdout
-pub struct FileReporter {
-    /// Thread-safe writer that can be either a file or stdout
-    writer: Mutex<Box<dyn Write + Send>>,
-}
-
-/// Console-based reporter that writes output to stdout
-pub struct ConsoleReporter;
-
-impl FileReporter {
-    /// Creates a new FileReporter
+impl Reporter {
+    /// Creates a new Reporter instance.
     ///
     /// # Arguments
-    /// * `file_path` - Optional path to output file. If None, uses stdout
+    ///
+    /// * `file_path` - An optional file path. If provided, output will be written to the file.
+    ///                 If None, output will be written to console.
     ///
     /// # Returns
-    /// A new FileReporter instance
-    pub fn new(file_path: Option<&str>) -> Self {
-        let writer = match file_path {
-            Some(path) => {
-                let file = File::create(Path::new(path)).unwrap();
-                Box::new(file) as Box<dyn Write + Send>
-            }
-            None => Box::new(io::stdout()) as Box<dyn Write + Send>,
+    ///
+    /// * `Result<Reporter, io::Error>` - A Result containing the Reporter if successful,
+    ///   or an IO error if file creation fails.
+    pub fn new(file_path: Option<&str>) -> io::Result<Self> {
+        let output = match file_path {
+            Some(path) => Output::File(File::create(Path::new(path))?),
+            None => Output::Console,
         };
-        Self {
-            writer: Mutex::new(writer),
-        }
+
+        Ok(Self {
+            output: Mutex::new(output),
+        })
     }
 
-    /// Reports formatted data with newline
+    /// Reports formatted data to the output destination.
     ///
     /// # Arguments
-    /// * `data` - The data to be reported
-    pub fn report<T: std::fmt::Display>(&self, data: &T) {
+    ///
+    /// * `data` - The data to be reported, must implement Display trait.
+    ///
+    /// # Returns
+    ///
+    /// * `io::Result<()>` - Ok if writing succeeds, Err if it fails.
+    pub fn report<T: std::fmt::Display>(&self, data: &T) -> io::Result<()> {
         let output = format!("{}\n", data);
-        self.writer
-            .lock()
-            .unwrap()
-            .write_all(output.as_bytes())
-            .unwrap();
-    }
-
-    /// Reports data in JSON format
-    ///
-    /// # Arguments
-    /// * `data` - The data to be serialized and reported
-    pub fn report_json<T: Serialize>(&self, data: &T) {
-        let json = serde_json::to_string(data).unwrap();
-        self.report(&json);
-    }
-
-    /// Reports multiple items in JSON format
-    ///
-    /// # Arguments
-    /// * `items` - Slice of items to be reported
-    pub fn report_batch<T: Serialize>(&self, items: &[T]) {
-        for item in items {
-            self.report_json(item);
+        let mut guard = self.output.lock().unwrap();
+        
+        match &mut *guard {
+            Output::File(file) => file.write_all(output.as_bytes()),
+            Output::Console => io::stdout().write_all(output.as_bytes()),
         }
     }
-}
 
-impl ConsoleReporter {
-    /// Creates a new ConsoleReporter
-    pub fn new() -> Self {
-        Self
-    }
-
-    /// Reports formatted data to console
+    /// Reports data in JSON format to the output destination.
     ///
     /// # Arguments
-    /// * `data` - The data to be reported
-    pub fn report<T: std::fmt::Display>(&self, data: &T) {
-        println!("{}", data);
+    ///
+    /// * `data` - The data to be serialized to JSON and reported.
+    ///
+    /// # Returns
+    ///
+    /// * `io::Result<()>` - Ok if serialization and writing succeed, Err if either fails.
+    pub fn report_json<T: Serialize>(&self, data: &T) -> io::Result<()> {
+        let json = serde_json::to_string(data)?;
+        self.report(&json)
     }
 
-    /// Reports data in JSON format to console
+    /// Reports a batch of items in JSON format to the output destination.
     ///
     /// # Arguments
-    /// * `data` - The data to be serialized and reported
-    pub fn report_json<T: Serialize>(&self, data: &T) {
-        println!("{}", serde_json::to_string(data).unwrap());
-    }
-
-    /// Reports multiple items in JSON format to console
     ///
-    /// # Arguments
-    /// * `items` - Slice of items to be reported
-    pub fn report_batch<T: Serialize>(&self, items: &[T]) {
+    /// * `items` - A slice of items to be reported in JSON format.
+    ///
+    /// # Returns
+    ///
+    /// * `io::Result<()>` - Ok if all items are reported successfully, Err if any fail.
+    pub fn report_batch<T: Serialize>(&self, items: &[T]) -> io::Result<()> {
         for item in items {
-            self.report_json(item);
+            self.report_json(item)?;
         }
+        Ok(())
     }
 }

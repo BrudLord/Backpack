@@ -1,77 +1,155 @@
-//! Tests for the reporter functionality in the metrics service.
-use crate::metrics_service::metrics_service::{Measurement, MetricsUnit};
-use crate::metrics_service::reporter::{ConsoleReporter, FileReporter, ReporterType};
-use knapsack_library::models::item::Item;
-use knapsack_library::models::knapsack::Knapsack;
-use std::collections::HashMap;
-use std::fs;
+#[cfg(test)]
+mod tests {
+    use crate::metrics_service::reporter::Reporter;
 
-/// Creates a sample measurement for testing purposes
-///
-/// # Returns
-/// A `Measurement` instance with:
-/// - Knapsack of capacity 100 and 3 items
-/// - Single metric named "test_metric"
-/// - Predefined execution time and memory usage values
-fn sample_measurement() -> Measurement {
-    let knapsack = Knapsack::new(
-        100,
-        vec![Item::new(60, 10), Item::new(100, 20), Item::new(120, 30)],
-    );
+    use super::*;
+    use serde::Serialize;
+    use std::fs::{self, File};
+    use std::io::{self, Read};
+    use std::process::Output;
+    use tempfile::NamedTempFile;
 
-    let mut metrics = HashMap::new();
-    metrics.insert(
-        "test_metric".to_string(),
-        MetricsUnit {
-            result: Some(200),
-            execution_time_ns: Some(123456789),
-            memory_usage: Some(1024),
-        },
-    );
-
-    Measurement {
-        experiment_name: "exp".to_string(),
-        knapsack,
-        metrics,
+    #[derive(Serialize)]
+    struct TestData {
+        name: String,
+        value: i32,
     }
-}
 
-/// Tests file reporting functionality
-///
-/// # Test steps
-/// 1. Creates a temporary file reporter
-/// 2. Generates and reports a sample measurement
-/// 3. Verifies that the output contains expected content
-///
-/// # Expected results
-/// - File should contain "test_metric"
-/// - File should contain "result"
-#[test]
-fn test_report_to_file() {
-    let temp_file = "test_report.txt";
-    let reporter = ReporterType::File(FileReporter::new(Some(temp_file)));
-    let measurement = sample_measurement();
+    fn create_test_data() -> TestData {
+        TestData {
+            name: "test".to_string(),
+            value: 42,
+        }
+    }
 
-    reporter.report_json(&measurement);
+    fn read_file_content(path: &str) -> String {
+        let mut file = File::open(path).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        content
+    }
 
-    let contents = fs::read_to_string(temp_file).unwrap();
-    assert!(contents.contains("test_metric"));
-    assert!(contents.contains("result"));
-}
+    #[test]
+    fn test_console_reporter_creation() {
+        let reporter = Reporter::new(None);
+        assert!(reporter.is_ok());
+    }
 
-/// Tests batch reporting to console
-///
-/// # Test steps
-/// 1. Creates a console reporter
-/// 2. Generates multiple sample measurements
-/// 3. Reports them in batch
-///
-/// # Expected results
-/// - Should print multiple measurements to console
-/// - No assertions as this is a visual test
-#[test]
-fn test_report_batch() {
-    let reporter = ReporterType::Console(ConsoleReporter::new());
-    let measurements = vec![sample_measurement(), sample_measurement()];
-    reporter.report_batch(&measurements);
+    #[test]
+    fn test_file_reporter_creation() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()));
+        assert!(reporter.is_ok());
+    }
+
+    #[test]
+    fn test_file_reporter_write() -> io::Result<()> {
+        // Setup
+        let temp_file = NamedTempFile::new()?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let test_message = "Test message";
+
+        // Test
+        reporter.report(&test_message)?;
+
+        // Verify
+        let content = read_file_content(temp_file.path().to_str().unwrap());
+        assert_eq!(content, "Test message\n");
+        Ok(())
+    }
+
+    #[test]
+    fn test_json_report() -> io::Result<()> {
+        // Setup
+        let temp_file = NamedTempFile::new()?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let test_data = create_test_data();
+
+        // Test
+        reporter.report_json(&test_data)?;
+
+        // Verify
+        let content = read_file_content(temp_file.path().to_str().unwrap());
+        let expected = serde_json::to_string(&test_data)? + "\n";
+        assert_eq!(content, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_batch_report() -> io::Result<()> {
+        // Setup
+        let temp_file = NamedTempFile::new()?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let test_data = vec![
+            create_test_data(),
+            TestData {
+                name: "test2".to_string(),
+                value: 43,
+            },
+        ];
+
+        // Test
+        reporter.report_batch(&test_data)?;
+
+        // Verify
+        let content = read_file_content(temp_file.path().to_str().unwrap());
+        let expected = test_data.iter()
+            .map(|data| serde_json::to_string(data).unwrap() + "\n")
+            .collect::<String>();
+        assert_eq!(content, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_file_path() {
+        let reporter = Reporter::new(Some("/invalid/path/file.txt"));
+        assert!(reporter.is_err());
+    }
+
+    #[test]
+    fn test_concurrent_writes() -> io::Result<()> {
+        use std::sync::Arc;
+        use std::thread;
+
+        // Setup
+        let temp_file = NamedTempFile::new()?;
+        let reporter = Arc::new(Reporter::new(Some(temp_file.path().to_str().unwrap()))?);
+        let thread_count = 10;
+        let mut handles = vec![];
+
+        // Test concurrent writes
+        for i in 0..thread_count {
+            let reporter_clone = Arc::clone(&reporter);
+            let handle = thread::spawn(move || {
+                reporter_clone.report(&format!("Thread {}", i)).unwrap();
+            });
+            handles.push(handle);
+        }
+
+        // Wait for all threads
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // Verify
+        let content = read_file_content(temp_file.path().to_str().unwrap());
+        assert_eq!(content.lines().count(), thread_count);
+        Ok(())
+    }
+
+    #[test]
+    fn test_large_data() -> io::Result<()> {
+        // Setup
+        let temp_file = NamedTempFile::new()?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let large_string = "a".repeat(1_000_000);
+
+        // Test
+        reporter.report(&large_string)?;
+
+        // Verify
+        let content = read_file_content(temp_file.path().to_str().unwrap());
+        assert_eq!(content, large_string + "\n");
+        Ok(())
+    }
 }

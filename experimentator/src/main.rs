@@ -1,6 +1,6 @@
 mod data;
+mod metrics_service;
 mod models;
-mod metrics_service; 
 
 use data::manager::generate_rnd_knapsacks;
 use knapsack_library::algorithms_service::AlgorithmsService;
@@ -14,17 +14,20 @@ fn main() {
     let knapsacks: Vec<Knapsack> =
         generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
-    let mut metric_service = MetricService::new(Some("results.txt"));
-
+    let mut metric_service = MetricService::new(Some("results.txt")).unwrap();
     let algorithms_names = AlgorithmsService::get_algorithms_names();
+    println!(
+        "Running experiments with algorithms: {:?}",
+        algorithms_names
+    );
+
     let out = metric_service.conduct_batch_experiment(
         |s, k| AlgorithmsService::solve(s, k),
         knapsacks.iter().collect(),
         &algorithms_names,
     );
-
     // Aggregates the results of the batch experiment
-    metric_service.agreggate(out);
+    metric_service.aggregate(out);
 
     println!("Results saved in results.txt");
 }

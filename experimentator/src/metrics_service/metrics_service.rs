@@ -1,78 +1,50 @@
-use crate::metrics_service::reporter::{ ReporterType, ConsoleReporter, FileReporter };
-use knapsack_library::models::knapsack::Knapsack;
-use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::convert::From;
+//! Metrics Service module provides functionality for collecting and analyzing algorithm performance metrics.
+//!
+//! This module is responsible for:
+//! - Conducting experiments with different algorithms
+//! - Collecting performance metrics (execution time, memory usage)
+//! - Aggregating and analyzing results
+//! - Generating reports
+
+use std::collections::HashMap;
+use std::io;
 use std::time::Instant;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Measurement {
-    /// Name of the experiment
-    pub experiment_name: String,
-    /// Knapsack unit
-    pub knapsack: Knapsack,
-    /// Metrics of the experiment
-    pub metrics: HashMap<String, MetricsUnit>,
-}
+use crate::metrics_service::models::measurement::Measurement;
+use crate::metrics_service::models::metrics_data::MetricsData;
+use crate::metrics_service::models::stats::{AggregatedMetric, Stats};
+use crate::metrics_service::reporter::Reporter;
+use knapsack_library::models::knapsack::Knapsack;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MetricsUnit {
-    /// Maximum value of the knapsack
-    pub result: Option<u32>,
-    /// Execution time in nanoseconds of the algorithm
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub execution_time_ns: Option<u128>,
-    /// Memory usage of the algorithm
-    pub memory_usage: Option<usize>,
-}
-
-impl MetricsUnit {
-    pub fn new() -> Self {
-        Self {
-            result: None,
-            execution_time_ns: None,
-            memory_usage: None,
-        }
-    }
-}
-
-impl From<(Option<u32>, Option<u128>, Option<usize>)> for MetricsUnit {
-    /// Convert a tuple of (Option<u32>, Option<u128>, Option<usize>) to a MetricsUnit
-    fn from(t: (Option<u32>, Option<u128>, Option<usize>)) -> MetricsUnit {
-        MetricsUnit {
-            result: t.0,
-            execution_time_ns: t.1,
-            memory_usage: t.2,
-        }
-    }
-}
-
-impl Measurement {
-    pub fn new(experiment_name: String, knapsack: &Knapsack) -> Self {
-        Self {
-            experiment_name,
-            knapsack: knapsack.clone(),
-            metrics: HashMap::new(),
-        }
-    }
-}
-
-/// Service for conducting experiments
+/// Service for collecting and analyzing algorithm performance metrics
 pub struct MetricService {
-    /// Logger
-    reporter: ReporterType,
+    reporter: Reporter,
 }
 
 impl MetricService {
-    pub fn new(file_path: Option<&str>) -> Self {
-        let reporter = match file_path {
-            Some(path) => ReporterType::File(FileReporter::new(Some(path))),
-            None => ReporterType::Console(ConsoleReporter::new()),
-        };
-        Self { reporter }
+    /// Creates a new MetricService instance
+    ///
+    /// # Arguments
+    /// * `file_path` - Optional path to output file for metrics reporting
+    ///
+    /// # Returns
+    /// * `io::Result<Self>` - New MetricService instance or IO error
+    pub fn new(file_path: Option<&str>) -> io::Result<Self> {
+        Ok(Self {
+            reporter: Reporter::new(file_path)?,
+        })
     }
 
-    /// Conduct an experiment without logging and return the Measurement
+    /// Conducts a single experiment with given algorithm and input
+    ///
+    /// # Arguments
+    /// * `f` - Algorithm function to test. It should take an algorithm name and a knapsack as arguments and return the result of the algorithm. The signature is `Fn(String, &Knapsack) -> Option<u64>`
+    /// * `knapsack` - Input data for the algorithm
+    /// * `algorithm_names` - Names of algorithms to test
+    /// * `experiment_name` - Optional name for the experiment
+    ///
+    /// # Returns
+    /// * `Measurement` - Results of the experiment
     pub fn conduct_experiment<F>(
         &self,
         f: F,
@@ -81,26 +53,36 @@ impl MetricService {
         experiment_name: Option<&str>,
     ) -> Measurement
     where
-        F: Fn(String, &Knapsack) -> Option<u32>,
+        F: Fn(String, &Knapsack) -> Option<u64>,
     {
         let mut experiment_unit: Measurement = match experiment_name {
             Some(name) => Measurement::new(name.to_string(), knapsack),
             None => Measurement::new("Experiment".to_string(), knapsack),
         };
-        let maps: HashMap<String, MetricsUnit> = algorithm_names
+
+        let maps: HashMap<String, MetricsData> = algorithm_names
             .iter()
             .map(|name| {
+                println!("Running algorithm: {}", name); // Add algorithm logging
                 let start_time = Instant::now();
                 let result = f(name.clone(), &knapsack);
                 let execution_time_ns = start_time.elapsed().as_nanos();
+                println!("Completed algorithm: {}", name); // Add completion logging
                 return (name.clone(), (result, Some(execution_time_ns), None).into());
             })
             .collect();
         experiment_unit.metrics = maps;
         experiment_unit
     }
-
-    /// Conduct a batch experiment without logging and return the Measurement
+    /// Conducts batch experiments with multiple inputs
+    ///
+    /// # Arguments
+    /// * `f` - Algorithm function to test
+    /// * `knapsacks` - Collection of input data
+    /// * `algorithm_names` - Names of algorithms to test
+    ///
+    /// # Returns
+    /// * `Vec<Measurement>` - Results of all experiments
     pub fn conduct_batch_experiment<F>(
         &self,
         f: F,
@@ -108,146 +90,132 @@ impl MetricService {
         algorithm_names: &Vec<String>,
     ) -> Vec<Measurement>
     where
-        F: Fn(String, &Knapsack) -> Option<u32>,
+        F: Fn(String, &Knapsack) -> Option<u64>,
     {
+        println!(
+            "Starting batch experiment with {} knapsacks",
+            knapsacks.len()
+        );
         let mut measurements = Vec::new();
-        for knapsack in &knapsacks {
-            let measurement = self.conduct_experiment(&f, &knapsack, &algorithm_names, None);
+        for (i, knapsack) in knapsacks.iter().enumerate() {
+            println!("Processing knapsack {}/{}", i + 1, knapsacks.len());
+            let measurement = self.conduct_experiment(&f, knapsack, algorithm_names, None);
             measurements.push(measurement);
+            println!("Completed knapsack {}", i + 1); // Add completion log
         }
+        println!("Batch experiment completed");
         measurements
     }
 
-    /// Write an experiment result to the reporter
+    /// Writes an experiment result to the reporter
+    ///
+    /// # Arguments
+    /// * `measurement` - The measurement to write
     pub fn write_measurement(&self, measurement: &Measurement) {
-        self.reporter.report_json(measurement);
+        self.reporter.report_json(measurement).unwrap_or_else(|e| {
+            eprintln!("Failed to report measurement: {}", e);
+        });
     }
 
+    /// Writes a batch of experiment results to the reporter
+    ///
+    /// # Arguments
+    /// * `measurements` - The measurements to write    
     pub fn write_batch_measurement(&self, measurements: &Vec<Measurement>) {
-        self.reporter.report_batch(measurements);
+        self.reporter
+            .report_batch(measurements)
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to report batch measurements: {}", e);
+            });
     }
 
-    /// Agreggate the metrics of the experiment results and display by reporter
-    pub fn agreggate(&self, measurements: Vec<Measurement>) {
-        struct AgreggateMetrics {
-            algorithm_name: String,
-            correct_rate: f64,
-            mean_execution_time_ns: f64,
-            percentile_95_execution_time_ns: f64,
-            mean_memory_usage: f64,
-            percentile_95_memory_usage: f64,
-        }
+    /// Writes the aggregated metrics to the reporter
+    ///
+    /// # Arguments
+    /// * `metrics` - The aggregated metrics to write
+    fn report_metrics(&self, metrics: &[AggregatedMetric]) {
+        let mut output = String::new();
 
-        #[derive(Debug)]
-        enum DisplayValue {
-            Text(String),
-            Number(f64),
-        }
-
-        impl std::fmt::Display for DisplayValue {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                match self {
-                    DisplayValue::Text(s) => write!(f, "{:>15}", s),
-                    DisplayValue::Number(n) => write!(f, "{:>15.3}", n),
-                }
-            }
-        }
-
-        fn display_line(
-            algorithm_name: DisplayValue,
-            correct_rate: DisplayValue,
-            mean_execution_time_ns: DisplayValue,
-            percentile_95_execution_time_ns: DisplayValue,
-            mean_memory_usage: DisplayValue,
-            percentile_95_memory_usage: DisplayValue,
-        ) -> String {
-            let mut output_string = String::new();
-            output_string += &format!("{n:>20}", n = algorithm_name);
-            output_string += &format!("{}", correct_rate);
-            output_string += &format!("{}", mean_execution_time_ns);
-            output_string += &format!("{}", percentile_95_execution_time_ns);
-            output_string += &format!("{}", mean_memory_usage);
-            output_string += &format!("{}", percentile_95_memory_usage);
-            output_string += "\n";
-            output_string
-        }
-
-        impl AgreggateMetrics {
-            pub fn display(&self) -> String {
-                display_line(
-                    DisplayValue::Text(self.algorithm_name.to_string()),
-                    DisplayValue::Number(self.correct_rate),
-                    DisplayValue::Number(self.mean_execution_time_ns),
-                    DisplayValue::Number(self.percentile_95_execution_time_ns),
-                    DisplayValue::Number(self.mean_memory_usage),
-                    DisplayValue::Number(self.percentile_95_memory_usage),
-                )
-            }
-        }
-
-        let mut metrics: HashMap<String, AgreggateMetrics> = HashMap::new();
-        let mut set = HashSet::new();
-
-        // Get the maximum result for each algorithm
-        let mut answers = Vec::new();
-        for measurement in &measurements {
-            let mut answer = 0;
-            for (key, metric) in &measurement.metrics {
-                set.insert(key);
-                answer = std::cmp::max(metric.result.unwrap_or(0), answer);
-            }
-            answers.push(answer);
-        }
-
-        // Initialize metrics for each algorithm
-        for name in &set {
-            metrics.insert(
-                name.to_string(),
-                AgreggateMetrics {
-                    algorithm_name: name.to_string(),
-                    correct_rate: 0.0,
-                    mean_execution_time_ns: 0.0,
-                    percentile_95_execution_time_ns: 0.0,
-                    mean_memory_usage: 0.0,
-                    percentile_95_memory_usage: 0.0,
-                },
-            );
-        }
-
-        // Calculate metrics for each algorithm
-        let mut experiment_number: usize = 0;
-        for measurement in &measurements {
-            let answer = answers[experiment_number];
-            experiment_number += 1;
-            for (key, metric) in &measurement.metrics {
-                let o = metrics.get_mut(key).unwrap();
-                (*o).mean_execution_time_ns += metric.execution_time_ns.unwrap_or(0) as f64;
-                (*o).mean_memory_usage += metric.memory_usage.unwrap_or(0) as f64;
-                let mut is_correct_answer: f64 = 0.0;
-                if metric.result.unwrap_or(0) == answer {
-                    is_correct_answer = 1.0;
-                }
-                (*o).correct_rate += is_correct_answer;
-            }
-        }
-        for (_, metric) in &mut metrics {
-            metric.mean_execution_time_ns /= experiment_number as f64;
-            metric.mean_memory_usage /= experiment_number as f64;
-            metric.correct_rate /= experiment_number as f64;
-        }
-
-        // Display the metrics
-        let mut out = display_line(
-            DisplayValue::Text("algorithm".to_string()),
-            DisplayValue::Text("correct_rate".to_string()),
-            DisplayValue::Text("mean_time".to_string()),
-            DisplayValue::Text("95%_time".to_string()),
-            DisplayValue::Text("mean_memory".to_string()),
-            DisplayValue::Text("95%_memory".to_string()),
+        let delimeter =
+            "----------+---------------------+----------------------------+---------------------\n";
+        // Add header
+        output.push_str(
+            "Algorithm | Success Rate        | Execution Time (ms)        | Memory Usage (MB)\n",
         );
-        for (_, metric) in &metrics {
-            out.push_str(&metric.display());
+        output.push_str(
+            "          |                     | mean/median/p95            | mean/median/p95\n",
+        );
+        output.push_str(&delimeter);
+
+        // Add data rows
+        for metric in metrics {
+            output.push_str(&format!(
+                "{:<9} | {:>6.1}%             | {:>6.3}/{:>6.3}/{:>6.3}       | {:>6.3}/{:>6.3}/{:>6.3}\n",
+                metric.algorithm_name,
+                metric.correct_rate * 100.0,
+                metric.execution_time.mean / 1_000_000.0,
+                metric.execution_time.median / 1_000_000.0,
+                metric.execution_time.percentile95 / 1_000_000.0,
+                metric.memory_usage.mean / (1024.0 * 1024.0),
+                metric.memory_usage.median / (1024.0 * 1024.0),
+                metric.memory_usage.percentile95 / (1024.0 * 1024.0)
+            ));
+            output.push_str(&delimeter);
         }
-        self.reporter.report(&out);
+
+        self.reporter.report(&output).unwrap_or_else(|e| {
+            eprintln!("Failed to report metrics: {}", e);
+        });
+    }
+
+    /// Aggregates measurements and generates metrics report
+    ///
+    /// # Arguments
+    /// * `measurements` - The measurements to aggregate
+    ///
+    /// # Returns
+    /// * `io::Result<Vec<AggregatedMetric>>` - Aggregated metrics or IO error
+    pub fn aggregate(&self, measurements: Vec<Measurement>) -> Vec<AggregatedMetric> {
+        let grouped_metrics = Measurement::group_metrics_by_algorithm(&measurements);
+        let answers = Measurement::get_bests_results(&measurements);
+
+        // Calculate aggregated metrics for each algorithm
+        let aggregated_metrics: Vec<AggregatedMetric> = grouped_metrics
+            .iter()
+            .map(|(algo_name, metrics)| {
+                // Calculate correct rate by comparing each result with its corresponding answer
+                let correct_rate = metrics
+                    .iter()
+                    .zip(answers.iter())
+                    .filter(|(m, &answer)| m.result.is_some() && m.result.unwrap() == answer)
+                    .count() as f64
+                    / metrics.len() as f64;
+
+                // Extract and sort execution times
+                let mut exec_times: Vec<u128> =
+                    metrics.iter().filter_map(|m| m.execution_time_ns).collect();
+                exec_times.sort_unstable();
+
+                // Extract and sort memory usage
+                let mut memory_usage: Vec<usize> =
+                    metrics.iter().filter_map(|m| m.memory_usage).collect();
+                memory_usage.sort_unstable();
+
+                AggregatedMetric::new(
+                    algo_name.clone(),
+                    correct_rate,
+                    Stats::calculate_stats(
+                        &exec_times.iter().map(|&x| x as f64).collect::<Vec<f64>>(),
+                    ),
+                    Stats::calculate_stats(
+                        &memory_usage.iter().map(|&x| x as f64).collect::<Vec<f64>>(),
+                    ),
+                )
+            })
+            .collect();
+
+        // Report results
+        self.report_metrics(&aggregated_metrics);
+        aggregated_metrics
     }
 }

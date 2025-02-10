@@ -22,29 +22,5 @@
             1,
             10
         ]
-    },
-    {
-        "num_items": 1000,
-        "capacity": 10,
-        "weights_range": [
-            1,
-            10
-        ],
-        "costs_range": [
-            1,
-            10
-        ]
-    },
-    {
-        "num_items": 1000,
-        "capacity": 1000,
-        "weights_range": [
-            1,
-            10
-        ],
-        "costs_range": [
-            1,
-            10
-        ]
     }
 ]
