@@ -54,3 +54,19 @@ fn test_knapsack_empty() {
         assert_eq!(solver.solve(&knapsack), Ok(0));
     }
 }
+
+#[test]
+// Проверяем, что алгоритм ориентируется на цену предметов, а не на количество
+fn test_knapsack_algo_based_on_value() {
+    let item1 = Item::new(1, 2);
+    let item2 = Item::new(5, 13);
+    let item3 = Item::new(2, 4);
+    let item4 = Item::new(5, 15);
+    let item5 = Item::new(3, 8);
+
+    let knapsack = Knapsack::new(10, vec![item1, item2, item3, item4, item5]);
+
+    for solver in AlgorithmsService::get_all_algorithms() {
+        assert_eq!(solver.solve(&knapsack), Ok(28));
+    }
+}
