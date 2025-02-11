@@ -25,5 +25,5 @@ pub trait KnapsackSolver {
     /// # Returns
     ///
     /// The maximum value that can be achieved by selecting items from the knapsack.
-    fn solve(&self, knapsack: &Knapsack) -> u64;
+    fn solve(&self, knapsack: &Knapsack) -> Result<u64, String>;
 }

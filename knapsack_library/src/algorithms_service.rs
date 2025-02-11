@@ -1,4 +1,5 @@
 use crate::algorithms_impls::dynamic::DynamicKnapsackSolver;
+use crate::algorithms_impls::full_iteration_with_bit_mask::BitMaskKnapsackSolver;
 use crate::algorithms_impls::lazy_dynamic::LazyDynamicKnapsackSolver;
 use crate::algorithms_impls::full_iteration_with_recursion::RecursiveKnapsackSolver;
 use crate::models::knapsack::Knapsack;
@@ -21,6 +22,7 @@ impl AlgorithmsService {
     pub fn get_all_algorithms() -> Vec<Box<dyn KnapsackSolver>> {
         vec![
             Box::new(RecursiveKnapsackSolver),
+            Box::new(BitMaskKnapsackSolver),
             Box::new(DynamicKnapsackSolver),
             Box::new(LazyDynamicKnapsackSolver),
         ]
@@ -41,13 +43,13 @@ impl AlgorithmsService {
     /// An `Option<u64>` where:
     /// - `Some(value)` contains the maximum value that can be achieved for the knapsack.
     /// - `None` is returned if the algorithm with the given name is not found.
-    pub fn solve(name: String, knapsack: &Knapsack) -> Option<u64> {
+    pub fn solve(name: String, knapsack: &Knapsack) -> Result<u64, String> {
         for algorithm in AlgorithmsService::get_all_algorithms() {
             if algorithm.get_name() == name {
-                return Some(algorithm.solve(knapsack));
+                return algorithm.solve(knapsack);
             }
         }
-        None
+        Err("Can't find algorithm name".to_owned())
     }
 
     /// Returns the names of all available algorithms.

@@ -15,7 +15,7 @@ mod tests {
         Knapsack::new(10, items)
     }
 
-    fn create_test_measurement(name: &str, result: Option<u64>) -> Measurement {
+    fn create_test_measurement(name: &str, result: Result<u64, String>) -> Measurement {
         let mut metrics = HashMap::new();
         metrics.insert(
             "test_algo".to_string(),
@@ -35,8 +35,8 @@ mod tests {
 
     fn create_test_measurements() -> Vec<Measurement> {
         vec![
-            create_test_measurement("test1", Some(42)),
-            create_test_measurement("test2", Some(24)),
+            create_test_measurement("test1", Ok(42)),
+            create_test_measurement("test2", Ok(24)),
         ]
     }
 
@@ -115,7 +115,7 @@ mod tests {
     fn test_write_measurement() -> io::Result<()> {
         let temp_file = NamedTempFile::new()?;
         let service = MetricService::new(Some(temp_file.path().to_str().unwrap()))?;
-        let measurement = create_test_measurement("write_test", Some(42));
+        let measurement = create_test_measurement("write_test", Ok(42));
 
         // This should not panic
         service.write_measurement(&measurement);
@@ -140,9 +140,9 @@ mod tests {
 
         // Create measurements with some incorrect results
         let measurements = vec![
-            create_test_measurement("test1", Some(42)), // Correct
-            create_test_measurement("test2", Some(40)), // Incorrect
-            create_test_measurement("test3", None),     // Failed
+            create_test_measurement("test1", Ok(42)), // Correct
+            create_test_measurement("test2", Ok(40)), // Incorrect
+            create_test_measurement("test3", Err("Test failed".to_string())),     // Failed
         ];
 
         let metrics = service.aggregate(measurements);
@@ -161,7 +161,7 @@ mod tests {
         let service = MetricService::new(Some(temp_file.path().to_str().unwrap()))?;
 
         // Create a measurement with missing execution time and memory usage
-        let mut measurement = create_test_measurement("test1", Some(42));
+        let mut measurement = create_test_measurement("test1", Ok(42));
         measurement
             .metrics
             .get_mut("test_algo")
@@ -187,11 +187,11 @@ mod tests {
         let temp_file = NamedTempFile::new()?;
         let service = MetricService::new(Some(temp_file.path().to_str().unwrap()))?;
 
-        let mut measurement = create_test_measurement("multi_algo", Some(42));
+        let mut measurement = create_test_measurement("multi_algo", Ok(42));
         measurement.metrics.insert(
             "another_algo".to_string(),
             MetricsData {
-                result: Some(42),
+                result: Ok(42),
                 execution_time_ns: Some(2_000_000),
                 memory_usage: Some(2048),
             },

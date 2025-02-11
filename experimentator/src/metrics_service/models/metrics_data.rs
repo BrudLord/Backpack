@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct MetricsData {
     /// The result value produced by the algorithm.
     /// `None` indicates execution failure or no result.
-    pub result: Option<u64>,
+    pub result: Result<u64, String>,
 
     /// Execution time in nanoseconds.
     /// `None` if timing was not measured.
@@ -23,8 +23,8 @@ pub struct MetricsData {
     pub memory_usage: Option<usize>,
 }
 
-impl From<(Option<u64>, Option<u128>, Option<usize>)> for MetricsData {
-    fn from(t: (Option<u64>, Option<u128>, Option<usize>)) -> MetricsData {
+impl From<(Result<u64, String>, Option<u128>, Option<usize>)> for MetricsData {
+    fn from(t: (Result<u64, String>, Option<u128>, Option<usize>)) -> MetricsData {
         MetricsData {
             result: t.0,
             execution_time_ns: t.1,

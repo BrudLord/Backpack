@@ -74,10 +74,15 @@ impl Measurement {
         measurements.iter()
             .map(|measurement| {
                 measurement.metrics.values()
-                    .filter_map(|metric| metric.result)
+                    // Преобразуем Result<u64, String> в Option<u64>, игнорируя ошибки
+                    .filter_map(|metric| match &metric.result {
+                        Ok(value) => Some(*value),       // Если Ok, добавляем значение
+                        Err(_) => None,                  // Если Err, игнорируем
+                    })
                     .max()
-                    .unwrap_or(0)
+                    .unwrap_or(0)  // Если нет значений, возвращаем 0
             })
             .collect()
     }
+
 }

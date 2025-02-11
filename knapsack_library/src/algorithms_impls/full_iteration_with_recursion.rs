@@ -27,7 +27,7 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
     ///
     /// A `u64` value representing the maximum value that can be achieved by fitting items
     /// in the knapsack without exceeding the capacity.
-    fn solve(&self, knapsack: &Knapsack) -> u64 {
+    fn solve(&self, knapsack: &Knapsack) -> Result<u64, String> {
         let mut best_value = 0; // Keeps track of the best (maximum) value found
 
         /// A recursive helper function to explore all possible item combinations.
@@ -82,6 +82,6 @@ impl KnapsackSolver for RecursiveKnapsackSolver {
 
         // Start the recursion with initial values (starting from the first item)
         recursive(knapsack, 0, 0, 0, &mut best_value);
-        best_value
+        Ok(best_value)
     }
 }

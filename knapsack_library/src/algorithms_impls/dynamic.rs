@@ -23,11 +23,11 @@ impl KnapsackSolver for DynamicKnapsackSolver {
         return "Dynamic".to_string();
     }
 
-    fn solve(&self, knapsack: &Knapsack) -> u64 {
+    fn solve(&self, knapsack: &Knapsack) -> Result<u64, String> {
         let n = knapsack.get_items_len();
         let capacity = knapsack.get_capacity();
         if capacity >= usize::MAX as u64 {
-            panic!("Capacity too large to process");
+            return Err("Capacity too large to process".to_string());
         }
         let capacity = capacity as usize;
 
@@ -46,6 +46,6 @@ impl KnapsackSolver for DynamicKnapsackSolver {
             }
         }
 
-        dp[n][capacity]
+        Ok(dp[n][capacity])
     }
 }

@@ -63,7 +63,7 @@ impl MetricService {
                 println!("Completed algorithm: {}", solver.get_name()); // Add completion logging
                 return (
                     solver.get_name().clone(),
-                    (Some(result), Some(execution_time_ns), None).into(),
+                    (result, Some(execution_time_ns), None).into(),
                 );
             })
             .collect();
@@ -173,7 +173,7 @@ impl MetricService {
                 let correct_rate = metrics
                     .iter()
                     .zip(answers.iter())
-                    .filter(|(m, &answer)| m.result.is_some() && m.result.unwrap() == answer)
+                    .filter(|(m, &answer)| m.result.is_ok() && m.result == Ok(answer))
                     .count() as f64
                     / metrics.len() as f64;
 

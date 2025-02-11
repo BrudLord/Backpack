@@ -14,11 +14,11 @@ impl KnapsackSolver for LazyDynamicKnapsackSolver {
         "Lazy Dynamic".to_string()
     }
 
-    fn solve(&self, knapsack: &Knapsack) -> u64 {
+    fn solve(&self, knapsack: &Knapsack) -> Result<u64, String> {
         let n = knapsack.get_items_len();
         let capacity = knapsack.get_capacity();
         if capacity >= usize::MAX as u64 {
-            panic!("Capacity too large to process");
+            return Err("Capacity too large to process".to_string());
         }
         let capacity = capacity as usize;
         let mut memo = HashMap::new();
@@ -45,6 +45,6 @@ impl KnapsackSolver for LazyDynamicKnapsackSolver {
             result
         }
         
-        knapsack_recursive(n, capacity, knapsack, &mut memo)
+        Ok(knapsack_recursive(n, capacity, knapsack, &mut memo))
     }
 }
