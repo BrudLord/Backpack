@@ -1,4 +1,5 @@
 use crate::algorithms_impls::dynamic::DynamicKnapsackSolver;
+use crate::algorithms_impls::lazy_dynamic::LazyDynamicKnapsackSolver;
 use crate::algorithms_impls::full_iteration_with_recursion::RecursiveKnapsackSolver;
 use crate::models::knapsack::Knapsack;
 use crate::models::knapsack_solver::KnapsackSolver;
@@ -21,6 +22,7 @@ impl AlgorithmsService {
         vec![
             Box::new(RecursiveKnapsackSolver),
             Box::new(DynamicKnapsackSolver),
+            Box::new(LazyDynamicKnapsackSolver),
         ]
     }
 
