@@ -14,17 +14,11 @@ fn main() {
     let knapsacks: Vec<Knapsack> =
         generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
-    let mut metric_service = MetricService::new(Some("results.txt")).unwrap();
-    let algorithms_names = AlgorithmsService::get_algorithms_names();
-    println!(
-        "Running experiments with algorithms: {:?}",
-        algorithms_names
-    );
+    let metric_service = MetricService::new(Some("results.txt")).unwrap();
 
     let out = metric_service.conduct_batch_experiment(
-        |s, k| AlgorithmsService::solve(s, k),
+        &AlgorithmsService::get_all_algorithms(),
         knapsacks.iter().collect(),
-        &algorithms_names,
     );
     // Aggregates the results of the batch experiment
     metric_service.aggregate(out);

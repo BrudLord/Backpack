@@ -2,11 +2,9 @@
 mod tests {
     use crate::metrics_service::reporter::Reporter;
 
-    use super::*;
     use serde::Serialize;
-    use std::fs::{self, File};
+    use std::fs::File;
     use std::io::{self, Read};
-    use std::process::Output;
     use tempfile::NamedTempFile;
 
     #[derive(Serialize)]

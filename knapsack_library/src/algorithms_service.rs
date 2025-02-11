@@ -1,6 +1,7 @@
+use crate::algorithms_impls::dynamic::DynamicKnapsackSolver;
 use crate::algorithms_impls::full_iteration_with_recursion::RecursiveKnapsackSolver;
-use crate::models::knapsack_solver::KnapsackSolver;
 use crate::models::knapsack::Knapsack;
+use crate::models::knapsack_solver::KnapsackSolver;
 
 /// A service that manages knapsack solving algorithms.
 ///
@@ -18,7 +19,8 @@ impl AlgorithmsService {
     /// A `Vec<Box<dyn KnapsackSolver>>` containing boxed instances of all available algorithms.
     pub fn get_all_algorithms() -> Vec<Box<dyn KnapsackSolver>> {
         vec![
-            Box::new(RecursiveKnapsackSolver), // Currently only the recursive knapsack solver
+            Box::new(RecursiveKnapsackSolver),
+            Box::new(DynamicKnapsackSolver),
         ]
     }
 
