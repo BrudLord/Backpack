@@ -27,7 +27,11 @@ impl Measurement {
     ///
     /// # Returns
     /// * `Self` - New Measurement instance with empty metrics
-    pub fn new(experiment_name: String, knapsack: &Knapsack) -> Self {
+    pub fn new(experiment_name: Option<&str>, knapsack: &Knapsack) -> Self {
+        let experiment_name = match experiment_name {
+            Some(name) => name.to_string(),
+            None => "Experiment".to_string(),
+        };
         Self {
             experiment_name,
             knapsack: knapsack.clone(),
