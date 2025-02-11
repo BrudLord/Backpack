@@ -33,12 +33,22 @@ fn test_knapsack_one_odd() {
 
 #[test]
 // Проверяем, что алгоритм отработает корректно, когда ни один предмет не может быть взят
-fn test_knapsack_empty() {
+fn test_knapsack_elemets_too_big() {
     let item1 = Item::new(15, 10);
     let item2 = Item::new(33, 7);
     let item3 = Item::new(3666, 5);
     
     let knapsack = Knapsack::new(10, vec![item1, item2, item3]);
+
+    for solver in AlgorithmsService::get_all_algorithms() {
+        assert_eq!(solver.solve(&knapsack), Ok(0));
+    }
+}
+
+#[test]
+// Проверяем, что алгоритм отработает корректно, когда ни один предмет не может быть взят
+fn test_knapsack_empty() {
+    let knapsack = Knapsack::new(10, vec![]);
 
     for solver in AlgorithmsService::get_all_algorithms() {
         assert_eq!(solver.solve(&knapsack), Ok(0));
