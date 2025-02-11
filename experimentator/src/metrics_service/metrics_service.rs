@@ -15,6 +15,7 @@ use crate::metrics_service::models::metrics_data::MetricsData;
 use crate::metrics_service::models::stats::{AggregatedMetric, Stats};
 use crate::metrics_service::reporter::Reporter;
 use knapsack_library::models::knapsack::Knapsack;
+use knapsack_library::models::knapsack_solver::KnapsackSolver;
 
 /// Service for collecting and analyzing algorithm performance metrics
 pub struct MetricService {
@@ -38,70 +39,53 @@ impl MetricService {
     /// Conducts a single experiment with given algorithm and input
     ///
     /// # Arguments
-    /// * `f` - Algorithm function to test. It should take an algorithm name and a knapsack as arguments and return the result of the algorithm. The signature is `Fn(String, &Knapsack) -> Option<u64>`
+    /// * `knapsack_solvers`
     /// * `knapsack` - Input data for the algorithm
     /// * `algorithm_names` - Names of algorithms to test
     /// * `experiment_name` - Optional name for the experiment
     ///
     /// # Returns
     /// * `Measurement` - Results of the experiment
-    pub fn conduct_experiment<F>(
+    pub fn conduct_experiment(
         &self,
-        f: F,
+        knapsack_solvers: &Vec<Box<dyn KnapsackSolver>>,
         knapsack: &Knapsack,
-        algorithm_names: &Vec<String>,
         experiment_name: Option<&str>,
-    ) -> Measurement
-    where
-        F: Fn(String, &Knapsack) -> Option<u64>,
-    {
-        let mut experiment_unit: Measurement = match experiment_name {
-            Some(name) => Measurement::new(name.to_string(), knapsack),
-            None => Measurement::new("Experiment".to_string(), knapsack),
-        };
-
-        let maps: HashMap<String, MetricsData> = algorithm_names
+    ) -> Measurement {
+        let mut experiment_unit: Measurement = Measurement::new(experiment_name, knapsack);
+        let maps: HashMap<String, MetricsData> = knapsack_solvers
             .iter()
-            .map(|name| {
-                println!("Running algorithm: {}", name); // Add algorithm logging
+            .map(|solver| {
+                println!("Running algorithm: {}", solver.get_name()); // Add algorithm logging
                 let start_time = Instant::now();
-                let result = f(name.clone(), &knapsack);
+                let result = solver.solve(&knapsack);
                 let execution_time_ns = start_time.elapsed().as_nanos();
-                println!("Completed algorithm: {}", name); // Add completion logging
-                return (name.clone(), (result, Some(execution_time_ns), None).into());
+                println!("Completed algorithm: {}", solver.get_name()); // Add completion logging
+                return (
+                    solver.get_name().clone(),
+                    (Some(result), Some(execution_time_ns), None).into(),
+                );
             })
             .collect();
         experiment_unit.metrics = maps;
         experiment_unit
     }
+
     /// Conducts batch experiments with multiple inputs
-    ///
-    /// # Arguments
-    /// * `f` - Algorithm function to test
-    /// * `knapsacks` - Collection of input data
-    /// * `algorithm_names` - Names of algorithms to test
-    ///
-    /// # Returns
-    /// * `Vec<Measurement>` - Results of all experiments
-    pub fn conduct_batch_experiment<F>(
+    pub fn conduct_batch_experiment(
         &self,
-        f: F,
+        knapsack_solvers: &Vec<Box<dyn KnapsackSolver>>,
         knapsacks: Vec<&Knapsack>,
-        algorithm_names: &Vec<String>,
-    ) -> Vec<Measurement>
-    where
-        F: Fn(String, &Knapsack) -> Option<u64>,
-    {
+    ) -> Vec<Measurement> {
         println!(
             "Starting batch experiment with {} knapsacks",
             knapsacks.len()
         );
         let mut measurements = Vec::new();
-        for (i, knapsack) in knapsacks.iter().enumerate() {
-            println!("Processing knapsack {}/{}", i + 1, knapsacks.len());
-            let measurement = self.conduct_experiment(&f, knapsack, algorithm_names, None);
+        for knapsack in knapsacks {
+            println!("Processing knapsack");
+            let measurement = self.conduct_experiment(&knapsack_solvers, knapsack, None);
             measurements.push(measurement);
-            println!("Completed knapsack {}", i + 1); // Add completion log
         }
         println!("Batch experiment completed");
         measurements
@@ -111,6 +95,7 @@ impl MetricService {
     ///
     /// # Arguments
     /// * `measurement` - The measurement to write
+    #[allow(dead_code)]
     pub fn write_measurement(&self, measurement: &Measurement) {
         self.reporter.report_json(measurement).unwrap_or_else(|e| {
             eprintln!("Failed to report measurement: {}", e);
@@ -121,6 +106,7 @@ impl MetricService {
     ///
     /// # Arguments
     /// * `measurements` - The measurements to write    
+    #[allow(dead_code)]
     pub fn write_batch_measurement(&self, measurements: &Vec<Measurement>) {
         self.reporter
             .report_batch(measurements)

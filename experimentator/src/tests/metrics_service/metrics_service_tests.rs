@@ -1,10 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::metrics_service::metrics_service::MetricService;
     use crate::metrics_service::models::measurement::Measurement;
     use crate::metrics_service::models::metrics_data::MetricsData;
-    use crate::metrics_service::models::stats::{AggregatedMetric, Stats};
+    use knapsack_library::algorithms_service::AlgorithmsService;
     use knapsack_library::models::item::Item;
     use knapsack_library::models::knapsack::Knapsack;
     use std::collections::HashMap;
@@ -52,19 +51,12 @@ mod tests {
     fn test_conduct_single_experiment() -> io::Result<()> {
         let service = MetricService::new(None)?;
         let knapsack = create_test_knapsack();
-        let algo_names = vec!["test_algo".to_string()];
+        let solvers = AlgorithmsService::get_all_algorithms();
 
-        let measurement =
-            service.conduct_experiment(|_, _| Some(42), &knapsack, &algo_names, Some("test"));
+        let measurement = service.conduct_experiment(&solvers, &knapsack, Some("test"));
 
         assert_eq!(measurement.experiment_name, "test");
-        assert_eq!(measurement.metrics.len(), 1);
-        assert!(measurement
-            .metrics
-            .get("test_algo")
-            .unwrap()
-            .result
-            .is_some());
+        assert!(!measurement.metrics.is_empty());
         Ok(())
     }
 
@@ -72,23 +64,13 @@ mod tests {
     fn test_conduct_batch_experiment() -> io::Result<()> {
         let service = MetricService::new(None)?;
         let knapsacks = vec![create_test_knapsack(), create_test_knapsack()];
-        let algo_names = vec!["test_algo".to_string()];
+        let solvers = AlgorithmsService::get_all_algorithms();
 
-        let measurements = service.conduct_batch_experiment(
-            |_, _| Some(42),
-            knapsacks.iter().collect(),
-            &algo_names,
-        );
+        let measurements = service.conduct_batch_experiment(&solvers, knapsacks.iter().collect());
 
         assert_eq!(measurements.len(), 2);
         for measurement in measurements {
-            assert_eq!(measurement.metrics.len(), 1);
-            assert!(measurement
-                .metrics
-                .get("test_algo")
-                .unwrap()
-                .result
-                .is_some());
+            assert!(!measurement.metrics.is_empty());
         }
         Ok(())
     }
@@ -104,7 +86,6 @@ mod tests {
 
     #[test]
     fn test_group_metrics_by_algorithm() -> io::Result<()> {
-        let service = MetricService::new(None)?;
         let measurements = create_test_measurements();
 
         let grouped = Measurement::group_metrics_by_algorithm(&measurements);
@@ -114,7 +95,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aggregate_metrics() -> io::Result<()> {
+    fn test_aggregate() -> io::Result<()> {
         let temp_file = NamedTempFile::new()?;
         let service = MetricService::new(Some(temp_file.path().to_str().unwrap()))?;
         let measurements = create_test_measurements();
@@ -158,7 +139,7 @@ mod tests {
         let service = MetricService::new(Some(temp_file.path().to_str().unwrap()))?;
 
         // Create measurements with some incorrect results
-        let mut measurements = vec![
+        let measurements = vec![
             create_test_measurement("test1", Some(42)), // Correct
             create_test_measurement("test2", Some(40)), // Incorrect
             create_test_measurement("test3", None),     // Failed
