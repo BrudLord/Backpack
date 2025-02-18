@@ -3,7 +3,7 @@ use crate::models::knapsack::Knapsack;
 use crate::models::item::Item;
 
 #[test]
-// Проверяем, что алгоритм возьмёт все предметы, если их суммарный вес равен весу рюкзака
+// We check that the algorithm will take all the items if their total weight is equal to the weight of the backpack.
 fn test_knapsack_all() {
     let item1 = Item::new(5, 10);
     let item2 = Item::new(3, 7);
@@ -18,7 +18,7 @@ fn test_knapsack_all() {
 }
 
 #[test]
-// Проверяем, что алгоритм правильно определит лишний предмет
+// We check that the algorithm correctly identifies the extra item.
 fn test_knapsack_one_odd() {
     let item1 = Item::new(5, 10);
     let item2 = Item::new(3, 7);
@@ -32,7 +32,7 @@ fn test_knapsack_one_odd() {
 }
 
 #[test]
-// Проверяем, что алгоритм отработает корректно, когда ни один предмет не может быть взят
+// We check that the algorithm will work correctly when no item can be taken.
 fn test_knapsack_elemets_too_big() {
     let item1 = Item::new(15, 10);
     let item2 = Item::new(33, 7);
@@ -46,7 +46,7 @@ fn test_knapsack_elemets_too_big() {
 }
 
 #[test]
-// Проверяем, что алгоритм отработает корректно, когда ни один предмет не может быть взят
+// We check that the algorithm will work correctly when no item can be taken.
 fn test_knapsack_empty() {
     let knapsack = Knapsack::new(10, vec![]);
 
@@ -56,10 +56,10 @@ fn test_knapsack_empty() {
 }
 
 #[test]
-// Проверяем, что алгоритм ориентируется на цену предметов, а не на количество
+// We check that the algorithm focuses on the price of the items, not the quantity.
 fn test_knapsack_algo_based_on_value() {
     let item1 = Item::new(1, 2);
-    let item2 = Item::new(5, 13);
+    let item2 = Item::new(5, 15);
     let item3 = Item::new(2, 4);
     let item4 = Item::new(5, 15);
     let item5 = Item::new(3, 8);
@@ -67,6 +67,6 @@ fn test_knapsack_algo_based_on_value() {
     let knapsack = Knapsack::new(10, vec![item1, item2, item3, item4, item5]);
 
     for solver in AlgorithmsService::get_all_algorithms() {
-        assert_eq!(solver.solve(&knapsack), Ok(28));
+        assert_eq!(solver.solve(&knapsack), Ok(30));
     }
 }

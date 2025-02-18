@@ -2,6 +2,7 @@ use crate::algorithms_impls::dynamic::DynamicKnapsackSolver;
 use crate::algorithms_impls::full_iteration_with_bit_mask::BitMaskKnapsackSolver;
 use crate::algorithms_impls::lazy_dynamic::LazyDynamicKnapsackSolver;
 use crate::algorithms_impls::full_iteration_with_recursion::RecursiveKnapsackSolver;
+use crate::algorithms_impls::greedy::GreedyKnapsackSolver;
 use crate::models::knapsack::Knapsack;
 use crate::models::knapsack_solver::KnapsackSolver;
 
@@ -25,6 +26,7 @@ impl AlgorithmsService {
             Box::new(BitMaskKnapsackSolver),
             Box::new(DynamicKnapsackSolver),
             Box::new(LazyDynamicKnapsackSolver),
+            Box::new(GreedyKnapsackSolver),
         ]
     }
 
