@@ -4,24 +4,26 @@ mod models;
 
 use data::manager::generate_rnd_knapsacks;
 use knapsack_library::algorithms_service::AlgorithmsService;
-use knapsack_library::models::knapsack::Knapsack;
-use metrics_service::metrics_service::MetricService;
 
 fn main() {
     let config_path = "experiments.json";
-    // Generates knapsacks based on the configuration file
-    // You can find the example of this file is "experiments_example.json"
-    let knapsacks: Vec<Knapsack> =
-        generate_rnd_knapsacks(config_path).expect("Failed to create knapsack");
 
-    let metric_service = MetricService::new(Some("results.txt")).unwrap();
+    let numbers_of_items = vec![10];
+    let num_knapsacks_per_size = 100;
 
-    let out = metric_service.conduct_batch_experiment(
-        &AlgorithmsService::get_all_algorithms(),
-        knapsacks.iter().collect(),
-    );
-    // Aggregates the results of the batch experiment
-    metric_service.aggregate(out);
+    let mut bencher =
+        metrics_service::bencher::Bencher::new(Some("experiment_results.txt")).unwrap();
 
-    println!("Results saved in results.txt");
+    for num_items in &numbers_of_items {
+        let mut knapsacks = Vec::new();
+        for _ in 0..num_knapsacks_per_size {
+            let knapsack =
+                generate_rnd_knapsacks(config_path).expect("Failed to create knapsack")[0].clone();
+            knapsacks.push(knapsack);
+        }
+
+        let algorithms = AlgorithmsService::get_all_algorithms();
+
+        bencher.conduct_experiment(*num_items, &algorithms, &knapsacks);
+    }
 }
