@@ -8,7 +8,7 @@ use knapsack_library::algorithms_service::AlgorithmsService;
 fn main() {
     let config_path = "experiments.json";
 
-    let numbers_of_items = vec![10];
+    let numbers_of_items = vec![20];
     let num_knapsacks_per_size = 100;
 
     let mut bencher =

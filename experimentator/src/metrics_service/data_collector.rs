@@ -5,10 +5,10 @@ use std::{env, ffi::OsStr, fs, path::PathBuf};
 use walkdir::WalkDir;
 
 fn get_criterion_start_dir() -> PathBuf {
-    let CRITERION_POSTFIX = "target/criterion";
+    let criterion_postfix = "target/criterion";
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let base_dir = env::args().nth(2).unwrap_or_else(|| ".".to_string());
-    let start_dir = cwd.join(base_dir).join(CRITERION_POSTFIX);
+    let start_dir = cwd.join(base_dir).join(criterion_postfix);
 
     start_dir
 }
@@ -20,7 +20,7 @@ fn get_point_estimate(stat_name: &str, json: &Value) -> Result<f64, String> {
 }
 
 pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
-    let FILENAME_STATS = "estimates.json";
+    let filename_stats = "estimates.json";
     let start_dir = get_criterion_start_dir();
 
     let mut measurements: HashMap<String, TimeStats> = HashMap::new();
@@ -28,7 +28,7 @@ pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
     for entry in WalkDir::new(start_dir).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
         if path.is_file()
-            && path.file_name() == Some(OsStr::new(FILENAME_STATS))
+            && path.file_name() == Some(OsStr::new(filename_stats))
             && path
                 .ancestors()
                 .any(|parent| parent.file_name() == Some(OsStr::new("new")))
@@ -77,7 +77,13 @@ pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
                     if !measurements.contains_key(&solver_name) {
                         measurements.insert(
                             solver_name.clone(),
-                            (mean / ns_to_ms, std_dev / ns_to_ms, median / ns_to_ms, median_abs_dev / ns_to_ms).into(),
+                            (
+                                mean / ns_to_ms,
+                                std_dev / ns_to_ms,
+                                median / ns_to_ms,
+                                median_abs_dev / ns_to_ms,
+                            )
+                                .into(),
                         );
                     }
                 }
@@ -98,10 +104,9 @@ pub fn delete_criterion_dir() {
     fs::remove_dir_all(path).unwrap();
 }
 
-
 pub fn get_mean_plots() {
     const MEAN_IMAGE_NAME: &str = "mean.svg";
-    let asset_dir = "assets";
+    let asset_dir = "assets".to_string();
     let start_dir = get_criterion_start_dir();
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let base_dir = env::args().nth(2).unwrap_or_else(|| ".".to_string());
@@ -120,11 +125,13 @@ pub fn get_mean_plots() {
                         fs::create_dir_all(dir).expect("Failed to create directory");
                     }
                     match fs::rename(&path, &target_path) {
-                        Ok(_) => println!{"Moved {} to {}", path.display(), target_path.display()},
-                        Err(e) => println!{"Error moving {} to {}: {}", path.display(), target_path.display(), e},
+                        Ok(_) => println! {"Moved {} to {}", path.display(), target_path.display()},
+                        Err(e) => {
+                            println! {"Error moving {} to {}: {}", path.display(), target_path.display(), e}
+                        }
                     }
                 }
-                Err(e) => println!{"Error getting relative path for {}: {}", path.display(), e},
+                Err(e) => println! {"Error getting relative path for {}: {}", path.display(), e},
             }
         }
     }
