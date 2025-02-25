@@ -1,0 +1,17 @@
+{
+    "generations": 10,
+    "algorithms": [
+        "Dynamic",
+        "Greedy"
+    ],
+    "num_items": 10,
+    "capacity": 1000,
+    "weights_range": [
+        1,
+        1000
+    ],
+    "costs_range": [
+        1,
+        1000
+    ]
+}

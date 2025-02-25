@@ -27,21 +27,21 @@ fn test_generate_rnd_knapsacks() {
     let file_path = dir.path().join("experiments.json");
     let mut file = File::create(&file_path).unwrap();
 
-    let json_data = r#"[
-        {
-            "num_items": 5,
-            "capacity": 50,
-            "weights_range": [1, 10],
-            "costs_range": [1, 10]
-        }
-    ]"#;
+    let json_data = r#"{
+        "generations": 10,
+        "algorithms": ["Dynamic", "Greedy"],
+        "num_items": 5,
+        "capacity": 50,
+        "weights_range": [1, 10],
+        "costs_range": [1, 10]
+    }"#;
 
     file.write_all(json_data.as_bytes()).unwrap();
 
     let result = generate_rnd_knapsacks(&file_path);
     assert!(result.is_ok());
-    let knapsacks = result.unwrap();
-    assert_eq!(knapsacks.len(), 1);
+    let (knapsacks, _) = result.unwrap();
+    assert_eq!(knapsacks.len(), 10);
 
     let knapsack = &knapsacks[0];
     assert_eq!(knapsack.get_items_len(), 5);

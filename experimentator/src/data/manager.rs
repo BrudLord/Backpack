@@ -23,16 +23,19 @@ use std::path::Path;
 /// # Errors
 ///
 /// Returns an error if `read_rand_config` fails.
-pub fn generate_rnd_knapsacks<P: AsRef<Path>>(path: P) -> Result<Vec<Knapsack>, String> {
-    let config: Vec<ExperimentConfig> = read_rand_config(path)?;
+pub fn generate_rnd_knapsacks<P: AsRef<Path>>(
+    path: P,
+) -> Result<(Vec<Knapsack>, Vec<String>), String> {
+    let config: ExperimentConfig = read_rand_config(path)?;
 
     let mut knapsacks: Vec<Knapsack> = Vec::new();
 
-    for exp_conf in config {
-        knapsacks.push(generate_knapsack(exp_conf));
+    for _ in 0..config.generations {
+        let knapsack = generate_knapsack(&config);
+        knapsacks.push(knapsack);
     }
 
-    Ok(knapsacks)
+    Ok((knapsacks, config.algorithms))
 }
 
 /// Generates a single `Knapsack` instance based on the provided configuration.
@@ -41,12 +44,12 @@ pub fn generate_rnd_knapsacks<P: AsRef<Path>>(path: P) -> Result<Vec<Knapsack>, 
 ///
 /// # Arguments
 ///
-/// * `config`: An `ExperimentConfig` struct containing the parameters for the knapsack.
+/// * `config`: An `ExperimentConfig` struct reference containing the parameters for the knapsack.
 ///
 /// # Returns
 ///
 /// A `Knapsack` instance.
-fn generate_knapsack(config: ExperimentConfig) -> Knapsack {
+fn generate_knapsack(config: &ExperimentConfig) -> Knapsack {
     let mut rng = rand::thread_rng();
     let items: Vec<Item> = (0..config.num_items)
         .map(|_| {
@@ -57,5 +60,5 @@ fn generate_knapsack(config: ExperimentConfig) -> Knapsack {
         })
         .collect();
 
-        Knapsack::new(config.capacity as u64, items)
+    Knapsack::new(config.capacity as u64, items)
 }

@@ -28,7 +28,7 @@ use std::path::Path;
 /// * The file content is not valid JSON.
 /// * The JSON structure does not match the expected structure for
 ///   a vector of `ExperimentConfig` structs.
-pub fn read_rand_config<P: AsRef<Path>>(path: P) -> Result<Vec<ExperimentConfig>, String> {
+pub fn read_rand_config<P: AsRef<Path>>(path: P) -> Result<ExperimentConfig, String> {
     // Reads the file contents into a String.  If the file cannot be read,
     // returns an error with a stringified version of the underlying I/O error.
     let data = fs::read_to_string(path).map_err(|e| e.to_string())?;
