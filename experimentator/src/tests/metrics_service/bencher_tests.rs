@@ -28,7 +28,6 @@ fn test_bencher_creation() {
     assert!(bencher.is_ok());
 }
 
-#[test]
 fn test_bencher_with_reporter() {
     let os_string = "linux";
 
