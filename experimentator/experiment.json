@@ -1,10 +1,13 @@
 {
-    "generations": 10,
+    "generations": 100,
     "algorithms": [
+        "Lazy dynamic",
+        "Recursion",
         "Dynamic",
-        "Greedy"
+        "Greedy",
+        "Bit mask"
     ],
-    "num_items": 10,
+    "num_items": 20,
     "capacity": 1000,
     "weights_range": [
         1,

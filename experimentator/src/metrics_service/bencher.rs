@@ -21,9 +21,9 @@ impl Bencher {
     /// Default warm-up time before benchmarking starts.
     const WARM_UP_TIME: Duration = Duration::new(1, 0);
     /// Default number of resampling iterations.
-    const NRESAMPLES: usize = 1001;
+    const NRESAMPLES: usize = 1000;
     /// Default time duration for measurement.
-    const MEASUREMENT_TIME: Duration = Duration::from_secs(10);
+    const MEASUREMENT_TIME: Duration = Duration::from_secs(60);
 
     /// Benchmarks a group of knapsack solvers.
     ///
@@ -82,7 +82,7 @@ impl Bencher {
         &self,
         solvers: &[Box<dyn KnapsackSolver>],
         knapsacks: &[Knapsack],
-        os_string: &str
+        os_string: &str,
     ) {
         // do not bench in the case of empty parameters
         if solvers.is_empty() || knapsacks.is_empty() {

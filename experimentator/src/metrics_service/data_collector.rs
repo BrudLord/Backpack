@@ -27,6 +27,14 @@ fn get_point_estimate(stat_name: &str, json: &Value) -> Result<f64, String> {
         .ok_or_else(|| format!("Failed to get {} estimate", stat_name))
 }
 
+fn capitalize_first(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
 /// Collects and processes benchmark statistics from criterion output
 ///
 /// Returns a HashMap mapping solver names to their performance statistics,
@@ -53,7 +61,8 @@ pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
                     .any(|p| p.file_name() == Some(OsStr::new("new")));
             println!("File matches criteria: {:?} -> {}", e.path(), matches); // Debug print
             matches
-        }) {
+        })
+    {
         let contents = fs::read_to_string(entry.path())
             .map_err(|_| format!("Error reading file {:?}", entry.file_name()))?;
         let json: Value = serde_json::from_str(&contents).unwrap();
@@ -83,9 +92,13 @@ pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
             .position(|&c| c == "criterion")
             .expect("'criterion' not found");
 
-        let solver_name = components[target_idx + criterion_idx + 2].to_string();
+        let solver_name = capitalize_first(
+            components[target_idx + criterion_idx + 2]
+                .to_string()
+                .as_ref(),
+        );
 
-        println!("{:?}", solver_name); 
+        println!("{:?}", solver_name);
 
         // Store measurements if not already present
         if !measurements.contains_key(&solver_name) {
