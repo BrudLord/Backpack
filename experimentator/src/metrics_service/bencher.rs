@@ -1,29 +1,42 @@
+use crate::data;
 use crate::metrics_service::models::measurement::Measurement;
 use crate::metrics_service::{data_collector, reporter::Reporter};
 use criterion::{BenchmarkId, Criterion};
 use knapsack_library::models::{knapsack::Knapsack, knapsack_solver::KnapsackSolver};
+use std::fmt::write;
 use std::{collections::HashMap, io, time::Duration};
+use std::{env, ffi::OsStr, fs, path::PathBuf};
 
+/// A benchmarking utility for evaluating the performance of different knapsack solvers.
+///
+/// This struct provides functionality to benchmark knapsack problem solvers
+/// using the Criterion benchmarking library and report the results.
 pub struct Bencher {
-    criterion: Criterion,
     reporter: Reporter,
 }
 
 impl Bencher {
+    /// Default sample size for benchmarking.
     const SAMPLE_SIZE: usize = 10;
+    /// Default warm-up time before benchmarking starts.
     const WARM_UP_TIME: Duration = Duration::new(1, 0);
-    const NRESAMPLES: usize = 1000;
-    const MEASUREMENT_TIME: Duration = Duration::from_secs(10);
+    /// Default number of resampling iterations.
+    const NRESAMPLES: usize = 1001;
+    /// Default time duration for measurement.
+    const MEASUREMENT_TIME: Duration = Duration::from_secs(120);
 
-    pub fn new(file_path: Option<&str>) -> io::Result<Self> {
-        Ok(Self {
-            criterion: Criterion::default(),
-            reporter: Reporter::new(file_path)?,
-        })
-    }
-
+    /// Benchmarks a group of knapsack solvers.
+    ///
+    /// # Arguments
+    ///
+    /// * `knapsack_solvers` - A slice of knapsack solvers to benchmark.
+    /// * `knapsacks` - A slice of knapsack instances to use for benchmarking.
+    /// * `sample_size` - Optional sample size for benchmarking.
+    /// * `warm_up_time` - Optional warm-up time duration.
+    /// * `nresamples` - Optional number of resampling iterations.
+    /// * `measurement_time` - Optional measurement duration.
     pub fn bench_group(
-        &mut self,
+        &self,
         knapsack_solvers: &[Box<dyn KnapsackSolver>],
         knapsacks: &[Knapsack],
         sample_size: Option<usize>,
@@ -36,7 +49,8 @@ impl Bencher {
         }
 
         let group_name = format!("{} items", knapsacks[0].get_items_len());
-        let mut group = self.criterion.benchmark_group(group_name);
+        let mut criterion = Criterion::default();
+        let mut group = criterion.benchmark_group(group_name);
 
         group
             .sample_size(sample_size.unwrap_or(Self::SAMPLE_SIZE))
@@ -49,6 +63,7 @@ impl Bencher {
             group.bench_with_input(BenchmarkId::new(&bench_name, ""), &knapsacks, |b, ks| {
                 b.iter(|| {
                     ks.iter().for_each(|k| {
+                        // do not use results - measure just time here
                         let _ = solver.solve(k);
                     })
                 });
@@ -57,20 +72,42 @@ impl Bencher {
         group.finish();
     }
 
+    /// Conducts a full experiment, benchmarking solvers and collecting statistics.
+    ///
+    /// # Arguments
+    ///
+    /// * `solvers` - A slice of knapsack solvers to test.
+    /// * `knapsacks` - A slice of knapsack instances to evaluate.
     pub fn conduct_experiment(
-        &mut self,
-        num_items: usize,
+        &self,
         solvers: &[Box<dyn KnapsackSolver>],
         knapsacks: &[Knapsack],
     ) {
+        // do not bench in the case of empty parameters
+        if solvers.is_empty() || knapsacks.is_empty() {
+            return;
+        }
+        let knapsack_num_items_config = knapsacks[0].get_items_len();
+        let number_of_samples = knapsacks.len();
         self.bench_group(solvers, knapsacks, None, None, None, None);
         let measurements = Self::get_stats(solvers, knapsacks);
-        self.report_table(num_items, &measurements);
+        println!("{:?}", measurements);
+        self.report_table(number_of_samples, knapsack_num_items_config, &measurements);
 
-        data_collector::get_mean_plots();
-        data_collector::delete_criterion_dir();
+        //data_collector::get_mean_plots(os_string.to_string());
+        //data_collector::delete_criterion_dir();
     }
 
+    /// Computes the correctness rates of solvers by comparing their results.
+    ///
+    /// # Arguments
+    ///
+    /// * `solvers` - A slice of knapsack solvers.
+    /// * `knapsacks` - A slice of knapsack instances.
+    ///
+    /// # Returns
+    ///
+    /// * `HashMap<String, f64>` - A mapping of solver names to their correctness percentage.
     fn calculate_correct_rates(
         solvers: &[Box<dyn KnapsackSolver>],
         knapsacks: &[Knapsack],
@@ -92,18 +129,25 @@ impl Bencher {
             }
         }
 
-        let knapsack_count = knapsacks.len() as f64;
+        let number_of_samples = knapsacks.len() as f64;
         correct_rates
             .iter_mut()
-            .for_each(|(_, v)| *v = (*v / knapsack_count) * 100.0);
+            .for_each(|(_, v)| *v = (*v / number_of_samples) * 100.0);
 
         correct_rates
     }
 
-    pub fn get_stats(
-        solvers: &[Box<dyn KnapsackSolver>],
-        knapsacks: &[Knapsack],
-    ) -> Vec<Measurement> {
+    /// Retrieves statistical measurements for the given solvers.
+    ///
+    /// # Arguments
+    ///
+    /// * `solvers` - A slice of knapsack solvers to evaluate.
+    /// * `knapsacks` - A slice of knapsack instances to test.
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<Measurement>` - A vector of measurements containing solver statistics.
+    fn get_stats(solvers: &[Box<dyn KnapsackSolver>], knapsacks: &[Knapsack]) -> Vec<Measurement> {
         let correct_rates = Self::calculate_correct_rates(solvers, knapsacks);
         let time_stats = data_collector::get_criterion_stats().unwrap_or_default();
 
@@ -122,10 +166,20 @@ impl Bencher {
             .collect()
     }
 
-    pub fn report_table(&self, num_items: usize, measurements: &[Measurement]) {
-        // bad style
-        let number_of_iters = 100.0;
-        let group_name = format!("{} items", num_items);
+    /// Reports benchmark results in a formatted markdown table.
+    ///
+    /// # Arguments
+    ///
+    /// * `number_of_samples` - The number of knapsack instances tested.
+    /// * `knapsack_num_items_config` - The number of items in each knapsack.
+    /// * `measurements` - A slice of measurements containing solver statistics.
+    pub fn report_table(
+        &self,
+        number_of_samples: usize,
+        knapsack_num_items_config: usize,
+        measurements: &[Measurement],
+    ) {
+        let group_name = format!("{} items", knapsack_num_items_config);
         let table_data: Vec<Vec<String>> = measurements
             .iter()
             .map(|m| {
@@ -135,10 +189,10 @@ impl Bencher {
                     format!("{:3.2}%", m.get_correct_rate()),
                     format!(
                         "{:6.3}/{:6.3}/{:6.3}/{:6.3}",
-                        time_stats.get_mean_time() / number_of_iters,
-                        time_stats.get_std_dev() / number_of_iters,
-                        time_stats.get_median_time() / number_of_iters,
-                        time_stats.get_median_abs_dev() / number_of_iters,
+                        time_stats.get_mean_time() / number_of_samples as f64,
+                        time_stats.get_std_dev() / number_of_samples as f64,
+                        time_stats.get_median_time() / number_of_samples as f64,
+                        time_stats.get_median_abs_dev() / number_of_samples as f64,
                     ),
                 ]
             })
@@ -152,25 +206,109 @@ impl Bencher {
         }
     }
 
+    /// Formats data into a markdown table string.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - A vector of vectors containing table data as strings.
+    ///
+    /// # Returns
+    ///
+    /// * `String` - The formatted markdown table.
     fn format_markdown_table(data: Vec<Vec<String>>) -> String {
-        let delimiter = "------------------+---------------------+----------------------------------------------+\n";
+        if data.is_empty() {
+            return String::from("Нет доступных данных.");
+        }
+
+        let headers = vec![
+            "Algorithm",
+            "Success Rate",
+            "Execution Time (ms) (mean/std_dev/median/median_abs_dev)",
+        ];
+        let mut widths = headers.iter().map(|h| h.len()).collect::<Vec<usize>>();
+
+        // Calculate maximum widths considering both headers and data
+        for row in &data {
+            for (i, col) in row.iter().enumerate() {
+                widths[i] = widths[i].max(col.len());
+            }
+        }
+
         let mut output = String::new();
 
+        // Header row
+        output.push_str("| ");
         output.push_str(
-            "     Algorithm    |    Success Rate     | Execution Time (ms)                          |\n",
+            &headers
+                .iter()
+                .enumerate()
+                .map(|(i, h)| format!("{:<width$}", h, width = widths[i]))
+                .collect::<Vec<_>>()
+                .join(" | "),
         );
-        output.push_str(
-            "                  |                     | mean/std_dev/median/median_abs_dev           |\n",
-        );
-        output.push_str(delimiter);
+        output.push_str(" |\n");
 
+        // Separator row
+        output.push_str("|");
+        output.push_str(
+            &widths
+                .iter()
+                .map(|&w| format!("-{:-<width$}-", "", width = w))
+                .collect::<Vec<_>>()
+                .join("|"),
+        );
+        output.push_str("|\n");
+
+        // Data rows
         for row in data {
-            output.push_str(&format!(
-                "{:<17} | {:<3}             | {}                  |\n",
-                row[0], row[1], row[2]
-            ));
-            output.push_str(delimiter);
+            output.push_str("| ");
+            output.push_str(
+                &row.iter()
+                    .enumerate()
+                    .map(|(i, col)| format!("{:<width$}", col, width = widths[i]))
+                    .collect::<Vec<_>>()
+                    .join(" | "),
+            );
+            output.push_str(" |\n");
         }
+
         output
+    }
+
+    /// Creates a new `Bencher` instance with reporter (write data without truncating).
+    ///
+    /// # Arguments
+    ///
+    /// * `file_path` - Optional path to a file where results will be logged.
+    ///
+    /// # Returns
+    ///
+    /// * `io::Result<Self>` - A result containing the `Bencher` instance if successful, otherwise an error.
+    pub fn new(os_string: Option<&str>, write_to_file_flag: bool) -> io::Result<Self> {
+        match write_to_file_flag {
+            true => {
+                let mut start_dir =
+                    env::current_dir().expect("Failed to get current working directory");
+                start_dir = start_dir.parent().unwrap().to_path_buf();
+                println!("{}", start_dir.display());
+                let experiment_results_dir = start_dir
+                    .join("docs".to_string())
+                    .join("experiments".to_string())
+                    .join(os_string.unwrap());
+                let _ = fs::create_dir_all(&experiment_results_dir);
+                println!("{}", experiment_results_dir.display());
+                return Ok(Self {
+                    reporter: Reporter::new(
+                        experiment_results_dir.join("experiment.md").to_str(),
+                        true,
+                    )?,
+                });
+            }
+            false => {
+                return Ok(Self {
+                    reporter: Reporter::new(None, true)?,
+                })
+            }
+        }
     }
 }

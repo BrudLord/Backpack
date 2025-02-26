@@ -15,8 +15,6 @@ pub struct AlgorithmsService;
 impl AlgorithmsService {
     /// Returns a list of all available knapsack-solving algorithms.
     ///
-    /// This method currently returns a vector with one algorithm: `RecursiveKnapsackSolver`.
-    ///
     /// # Returns
     ///
     /// A `Vec<Box<dyn KnapsackSolver>>` containing boxed instances of all available algorithms.
@@ -28,6 +26,17 @@ impl AlgorithmsService {
             Box::new(LazyDynamicKnapsackSolver),
             Box::new(GreedyKnapsackSolver),
         ]
+    }
+
+    /// Returns a list of knapsack-solving algorithms which matches string names.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<Box<dyn KnapsackSolver>>` containing boxed instances of all available algorithms.
+    pub fn get_algorithms_by_names(algorithm_names: Vec<String>) -> Vec<Box<dyn KnapsackSolver>> {
+        let mut algorithms = AlgorithmsService::get_all_algorithms();
+        algorithms.retain(|solver| algorithm_names.contains(&solver.as_ref().get_name()));
+        algorithms
     }
 
     /// Solves the knapsack problem using the specified algorithm.

@@ -29,14 +29,14 @@ mod tests {
 
     #[test]
     fn test_console_reporter_creation() {
-        let reporter = Reporter::new(None);
+        let reporter = Reporter::new(None, true);
         assert!(reporter.is_ok());
     }
 
     #[test]
     fn test_file_reporter_creation() {
         let temp_file = NamedTempFile::new().unwrap();
-        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()));
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()), true);
         assert!(reporter.is_ok());
     }
 
@@ -44,7 +44,7 @@ mod tests {
     fn test_file_reporter_write() -> io::Result<()> {
         // Setup
         let temp_file = NamedTempFile::new()?;
-        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()), true)?;
         let test_message = "Test message";
 
         // Test
@@ -60,7 +60,7 @@ mod tests {
     fn test_json_report() -> io::Result<()> {
         // Setup
         let temp_file = NamedTempFile::new()?;
-        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()), true)?;
         let test_data = create_test_data();
 
         // Test
@@ -77,7 +77,7 @@ mod tests {
     fn test_batch_report() -> io::Result<()> {
         // Setup
         let temp_file = NamedTempFile::new()?;
-        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()), true)?;
         let test_data = vec![
             create_test_data(),
             TestData {
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_invalid_file_path() {
-        let reporter = Reporter::new(Some("/invalid/path/file.txt"));
+        let reporter = Reporter::new(Some("/invalid/path/file.txt"), true);
         assert!(reporter.is_err());
     }
 
@@ -111,7 +111,7 @@ mod tests {
 
         // Setup
         let temp_file = NamedTempFile::new()?;
-        let reporter = Arc::new(Reporter::new(Some(temp_file.path().to_str().unwrap()))?);
+        let reporter = Arc::new(Reporter::new(Some(temp_file.path().to_str().unwrap()), true)?);
         let thread_count = 10;
         let mut handles = vec![];
 
@@ -139,7 +139,7 @@ mod tests {
     fn test_large_data() -> io::Result<()> {
         // Setup
         let temp_file = NamedTempFile::new()?;
-        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()))?;
+        let reporter = Reporter::new(Some(temp_file.path().to_str().unwrap()), true)?;
         let large_string = "a".repeat(1_000_000);
 
         // Test

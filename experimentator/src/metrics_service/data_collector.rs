@@ -1,118 +1,127 @@
 use crate::metrics_service::models::time_stats::TimeStats;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::{env, ffi::OsStr, fs, path::PathBuf};
+use std::{collections::HashMap, env, ffi::OsStr, fs, path::PathBuf};
 use walkdir::WalkDir;
 
+/// Returns the base directory for criterion benchmark results
 fn get_criterion_start_dir() -> PathBuf {
-    let criterion_postfix = "target/criterion";
+    let cwd = get_start_dir();
+    cwd.join("target/criterion")
+}
+
+fn get_start_dir() -> PathBuf {
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let base_dir = env::args().nth(2).unwrap_or_else(|| ".".to_string());
-    let start_dir = cwd.join(base_dir).join(criterion_postfix);
-
-    start_dir
+    cwd.join(base_dir)
 }
 
+/// Extracts a specific statistical estimate from JSON data
+///
+/// # Arguments
+/// * `stat_name` - Name of the statistic to extract (mean, median, etc.)
+/// * `json` - JSON object containing the statistical data
 fn get_point_estimate(stat_name: &str, json: &Value) -> Result<f64, String> {
-    let mut stat = json[stat_name]["point_estimate"].as_f64().unwrap();
-    stat = format!("{:.4e}", stat).parse::<f64>().unwrap();
-    Ok(stat)
+    json[stat_name]["point_estimate"]
+        .as_f64()
+        .map(|stat| format!("{:.4e}", stat).parse::<f64>().unwrap())
+        .ok_or_else(|| format!("Failed to get {} estimate", stat_name))
 }
 
+/// Collects and processes benchmark statistics from criterion output
+///
+/// Returns a HashMap mapping solver names to their performance statistics,
+/// converting nanoseconds to milliseconds in the process
 pub fn get_criterion_stats() -> Result<HashMap<String, TimeStats>, String> {
-    let filename_stats = "estimates.json";
     let start_dir = get_criterion_start_dir();
+    println!("Looking for criterion data in: {:?}", start_dir);
+    let mut measurements = HashMap::new();
+    const NS_TO_MS: f64 = 1000000.0;
 
-    let mut measurements: HashMap<String, TimeStats> = HashMap::new();
+    // Iterate through criterion output files
+    for entry in WalkDir::new(start_dir)
+        .into_iter()
+        .filter_map(|e| {
+            let result = e.ok();
+            println!("Found file: {:?}", result.as_ref().map(|e| e.path())); // Debug print
+            result
+        })
+        .filter(|e| {
+            let matches = e.path().is_file()
+                && e.file_name() == "estimates.json"
+                && e.path()
+                    .ancestors()
+                    .any(|p| p.file_name() == Some(OsStr::new("new")));
+            println!("File matches criteria: {:?} -> {}", e.path(), matches); // Debug print
+            matches
+        }) {
+        let contents = fs::read_to_string(entry.path())
+            .map_err(|_| format!("Error reading file {:?}", entry.file_name()))?;
+        let json: Value = serde_json::from_str(&contents).unwrap();
+        println!("{}", json);
 
-    for entry in WalkDir::new(start_dir).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path();
-        if path.is_file()
-            && path.file_name() == Some(OsStr::new(filename_stats))
-            && path
-                .ancestors()
-                .any(|parent| parent.file_name() == Some(OsStr::new("new")))
-        {
-            match fs::read_to_string(path) {
-                Ok(contents) => {
-                    let json: Value = serde_json::from_str(&contents).unwrap();
+        // Extract all relevant statistics
+        let stats = [
+            get_point_estimate("mean", &json)?,
+            get_point_estimate("std_dev", &json)?,
+            get_point_estimate("median", &json)?,
+            get_point_estimate("median_abs_dev", &json)?,
+        ];
 
-                    let mean = get_point_estimate("mean", &json).unwrap();
-                    let std_dev = get_point_estimate("std_dev", &json).unwrap();
-                    let median = get_point_estimate("median", &json).unwrap();
-                    let median_abs_dev = get_point_estimate("median_abs_dev", &json).unwrap();
+        // Extract solver name from path components
+        let components: Vec<_> = entry
+            .path()
+            .components()
+            .map(|c| c.as_os_str().to_str().unwrap_or(""))
+            .collect();
 
-                    let components: Vec<_> = path
-                        .components()
-                        .map(|c| c.as_os_str().to_str().unwrap_or(""))
-                        .collect();
-                    println!("components: {:?}", components);
+        let target_idx = components
+            .iter()
+            .position(|&c| c == "target")
+            .expect("'target' not found");
+        let criterion_idx = components[target_idx..]
+            .iter()
+            .position(|&c| c == "criterion")
+            .expect("'criterion' not found");
 
-                    let target_index = components
-                        .iter()
-                        .position(|&component| component == "target")
-                        .expect("'target' not found.");
-                    let criterion_index = &components[target_index + 1..]
-                        .iter()
-                        .position(|&component| component == "criterion")
-                        .expect("'criterion' not found after 'target'.");
+        let solver_name = components[target_idx + criterion_idx + 2].to_string();
 
-                    let rest_slice = &components[target_index + criterion_index + 2..];
-                    let solver_name = rest_slice[1].to_string();
+        println!("{:?}", solver_name); 
 
-                    println!("{}", rest_slice[1]);
-                    // println!("rest_slice: {:?}", rest_slice);
-                    let rest_slice = &rest_slice[..rest_slice.len() - 2];
-                    // println!("rest_slice2: {:?}", rest_slice);
-                    let mut rest = rest_slice.join(",");
-                    if rest_slice.len() == 2 {
-                        rest = format!("{},", rest);
-                    }
-
-                    println!(
-                        "{},{},{},{},{}",
-                        rest, mean, median, std_dev, median_abs_dev
-                    );
-                    let ns_to_ms = 1000000.0;
-                    if !measurements.contains_key(&solver_name) {
-                        measurements.insert(
-                            solver_name.clone(),
-                            (
-                                mean / ns_to_ms,
-                                std_dev / ns_to_ms,
-                                median / ns_to_ms,
-                                median_abs_dev / ns_to_ms,
-                            )
-                                .into(),
-                        );
-                    }
-                }
-                Err(_e) => {
-                    return Err(format!(
-                        "Error reading file {:?}",
-                        path.file_name().unwrap()
-                    ))
-                }
-            }
+        // Store measurements if not already present
+        if !measurements.contains_key(&solver_name) {
+            measurements.insert(
+                solver_name,
+                TimeStats::from((
+                    stats[0] / NS_TO_MS,
+                    stats[1] / NS_TO_MS,
+                    stats[2] / NS_TO_MS,
+                    stats[3] / NS_TO_MS,
+                )),
+            );
         }
     }
-    return Ok(measurements);
+    Ok(measurements)
 }
 
+/// Cleans up the criterion directory after benchmarking
 pub fn delete_criterion_dir() {
-    let path = "target/criterion";
-    fs::remove_dir_all(path).unwrap();
+    if let Err(e) = fs::remove_dir_all("target/criterion") {
+        eprintln!("Failed to delete criterion directory: {}", e);
+    }
 }
 
-pub fn get_mean_plots() {
+/// Collects and moves mean plot SVGs to a user-specific assets directory
+///
+/// Moves all mean.svg files from criterion results into assets dir
+pub fn get_mean_plots(os_string: String) {
     const MEAN_IMAGE_NAME: &str = "mean.svg";
     let asset_dir = "assets".to_string();
     let start_dir = get_criterion_start_dir();
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let base_dir = env::args().nth(2).unwrap_or_else(|| ".".to_string());
-    let end_dir = cwd.join(base_dir).join(asset_dir);
+    let end_dir = cwd.join(base_dir).join(asset_dir).join(os_string);
 
-    fs::create_dir_all(&end_dir).expect("Failed to create assets directory");
+    let _ = fs::create_dir_all(&end_dir);
 
     for entry in WalkDir::new(&start_dir).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();

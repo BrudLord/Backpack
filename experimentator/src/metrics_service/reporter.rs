@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
@@ -27,14 +27,23 @@ impl Reporter {
     ///
     /// * `file_path` - An optional file path. If provided, output will be written to the file.
     ///                 If None, output will be written to console.
+    /// * `append` - This determines whether to append to the file or overwrite it.
     ///
     /// # Returns
     ///
     /// * `Result<Reporter, io::Error>` - A Result containing the Reporter if successful,
     ///   or an IO error if file creation fails.
-    pub fn new(file_path: Option<&str>) -> io::Result<Self> {
+    pub fn new(file_path: Option<&str>, append: bool) -> io::Result<Self> {
         let output = match file_path {
-            Some(path) => Output::File(File::create(Path::new(path))?),
+            Some(path) => {
+                let file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(!append) // Truncate if not appending
+                    .append(append) // Append if flag is true
+                    .open(Path::new(path))?;
+                Output::File(file)
+            }
             None => Output::Console,
         };
 
