@@ -23,7 +23,7 @@ impl Bencher {
     /// Default number of resampling iterations.
     const NRESAMPLES: usize = 1001;
     /// Default time duration for measurement.
-    const MEASUREMENT_TIME: Duration = Duration::from_secs(120);
+    const MEASUREMENT_TIME: Duration = Duration::from_secs(10);
 
     /// Benchmarks a group of knapsack solvers.
     ///
@@ -82,6 +82,7 @@ impl Bencher {
         &self,
         solvers: &[Box<dyn KnapsackSolver>],
         knapsacks: &[Knapsack],
+        os_string: &str
     ) {
         // do not bench in the case of empty parameters
         if solvers.is_empty() || knapsacks.is_empty() {
@@ -94,8 +95,8 @@ impl Bencher {
         println!("{:?}", measurements);
         self.report_table(number_of_samples, knapsack_num_items_config, &measurements);
 
-        //data_collector::get_mean_plots(os_string.to_string());
-        //data_collector::delete_criterion_dir();
+        data_collector::get_mean_plots(os_string.to_string());
+        data_collector::delete_criterion_dir();
     }
 
     /// Computes the correctness rates of solvers by comparing their results.

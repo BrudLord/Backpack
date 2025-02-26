@@ -41,7 +41,7 @@ fn test_bencher_with_reporter() {
     let solvers = create_test_solvers();
 
     // Conduct experiment
-    bencher.conduct_experiment(&solvers, &knapsacks);
+    bencher.conduct_experiment(&solvers, &knapsacks, os_string);
 
     // Read the file content
     let content = fs::read_to_string("").unwrap();
@@ -74,7 +74,7 @@ fn test_cleanup_after_experiment() {
     let os_string = "linux";
 
 
-    bencher.conduct_experiment(&solvers, &knapsacks);
+    bencher.conduct_experiment(&solvers, &knapsacks, os_string);
 
     // Verify that criterion directory is cleaned up
     assert!(!Path::new("target/criterion").exists());
