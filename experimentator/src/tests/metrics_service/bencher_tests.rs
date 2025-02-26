@@ -4,8 +4,7 @@ use knapsack_library::{
     algorithms_service::AlgorithmsService,
     models::{item::Item, knapsack::Knapsack, knapsack_solver::KnapsackSolver},
 };
-use std::{collections::HashMap, fs, hash::Hash, path::Path};
-use tempfile::NamedTempFile;
+use std::{collections::HashMap, env, fs, hash::Hash, path::Path};
 
 /// Helper function to create test knapsacks
 fn create_test_knapsacks() -> Vec<Knapsack> {
@@ -31,8 +30,6 @@ fn test_bencher_creation() {
 
 #[test]
 fn test_bencher_with_reporter() {
-    // Create a temporary file for testing
-    let temp_file = NamedTempFile::new().unwrap();
     let os_string = "linux";
 
     // Create bencher with the temporary file
@@ -44,7 +41,15 @@ fn test_bencher_with_reporter() {
     bencher.conduct_experiment(&solvers, &knapsacks, os_string);
 
     // Read the file content
-    let content = fs::read_to_string("").unwrap();
+    let mut start_dir = env::current_dir().expect("Failed to get current working directory");
+    start_dir = start_dir.parent().unwrap().to_path_buf();
+    let experiment_results_dir = start_dir
+                    .join("docs".to_string())
+                    .join("experiments".to_string())
+                    .join(os_string);
+    println!("{}", experiment_results_dir.display());
+
+    let content = fs::read_to_string(experiment_results_dir.join("experiment.md")).unwrap();
 
     // Verify the output contains expected elements
     assert!(content.contains("Algorithm"));
