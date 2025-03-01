@@ -2,6 +2,8 @@
 
 Этот проект содержит реализации алгоритмов на Rust для решения задачи о бинарном рюкзаке. 
 
+Для подсчета используемой памяти используется крейт [`cap`](https://crates.io/crates/cap).
+
 ---
 
 ### Формулировка задачи о рюкзаке
@@ -26,6 +28,12 @@
 6. Жадный алгоритм  
 7. FPTAS (Fully Polynomial-Time Approximation Scheme)  
 8. Метод ветвей и границ  
+
+---
+
+### Сборка проекта
+- Для сборки библиотеки смотрите [`knapsack_library/README.md`](knapsack_library/README.md)
+- Для сборки тестовой среды смотрите [`experimentator/README.md`](experimentator/README.md)
 
 ---
 
