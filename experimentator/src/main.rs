@@ -8,7 +8,7 @@ use metrics_service::bencher::Bencher;
 
 fn main() {
     let config_path = "experiment.json";
-    let os_string = "windows";
+    let os_string = "out";
 
     let bencher = Bencher::new(Some(os_string), true).unwrap();
 
