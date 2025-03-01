@@ -79,12 +79,13 @@
 </pre>
 
 ### 7. Результаты по памяти
-Maximum resident set size (kbytes)
-Recursion:     43504
-Bit mask:      43548
-Dynamic:       43604
-Greedy:        43692
-Lazy Dynamic: 224064
+|             | Maximum resident set size (kbytes) |
+|-------------|------------------------------------|
+| Recursion   |               43504                |
+| Bit mask    |               43548                |
+| Dynamic     |               43604                |
+| Greedy      |               43692                |
+| Lazy Dynamic|              224064                |
 
 
 
