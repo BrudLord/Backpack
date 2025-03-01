@@ -55,7 +55,7 @@ impl Reporter {
     pub fn report<T: std::fmt::Display>(&self, data: &T) -> io::Result<()> {
         let output = format!("{}\n", data);
         let mut guard = self.output.lock().unwrap();
-        
+
         match &mut *guard {
             Output::File(file) => file.write_all(output.as_bytes()),
             Output::Console => io::stdout().write_all(output.as_bytes()),
@@ -71,6 +71,7 @@ impl Reporter {
     /// # Returns
     ///
     /// * `io::Result<()>` - Ok if serialization and writing succeed, Err if either fails.
+    #[allow(dead_code)]
     pub fn report_json<T: Serialize>(&self, data: &T) -> io::Result<()> {
         let json = serde_json::to_string(data)?;
         self.report(&json)
@@ -85,6 +86,7 @@ impl Reporter {
     /// # Returns
     ///
     /// * `io::Result<()>` - Ok if all items are reported successfully, Err if any fail.
+    #[allow(dead_code)]
     pub fn report_batch<T: Serialize>(&self, items: &[T]) -> io::Result<()> {
         for item in items {
             self.report_json(item)?;

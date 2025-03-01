@@ -27,7 +27,11 @@ impl Measurement {
     ///
     /// # Returns
     /// * `Self` - New Measurement instance with empty metrics
-    pub fn new(experiment_name: String, knapsack: &Knapsack) -> Self {
+    pub fn new(experiment_name: Option<&str>, knapsack: &Knapsack) -> Self {
+        let experiment_name = match experiment_name {
+            Some(name) => name.to_string(),
+            None => "Experiment".to_string(),
+        };
         Self {
             experiment_name,
             knapsack: knapsack.clone(),
@@ -70,10 +74,15 @@ impl Measurement {
         measurements.iter()
             .map(|measurement| {
                 measurement.metrics.values()
-                    .filter_map(|metric| metric.result)
+                    // Convert Result<u64, String> into Option<u64>, ignore errors
+                    .filter_map(|metric| match &metric.result {
+                        Ok(value) => Some(*value),
+                        Err(_) => None,
+                    })
                     .max()
                     .unwrap_or(0)
             })
             .collect()
     }
+
 }
