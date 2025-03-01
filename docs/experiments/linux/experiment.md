@@ -43,7 +43,7 @@
 >The second line shows confidence intervals on the mean and standard deviation of the per-iteration times (calculated naively). If std. dev. is large compared to the time values from above, the benchmarks are noisy. You may need to change your benchmark to reduce the noise. The median/med. abs. dev. line is similar to the mean/std. dev. line, except that it uses the median and median absolute deviation. As with the std. dev., if the med. abs. dev. is large, this indicates the benchmarks are noisy.
 
 
-### 6. Результаты
+### 6. Результаты по времени работы
 
 #### 10 items
 <pre>
@@ -78,5 +78,18 @@
 | Recursion    | 100.00%      |  0.091/ 0.001/ 0.090/ 0.001                              |
 </pre>
 
-7. Интерпретация результатов
-Greedy оказался самым быстрым, но Bitmask — самым медленным при росте входных данных. Dynamic Programming работает стабильнее и быстрее Lazy Dynamic, особенно на больших выборках. Greedy имеет наименьшее отклонение, что подтверждает его стабильность в скорости выполнения.
+### 7. Результаты по памяти
+Maximum resident set size (kbytes)
+Recursion:     43504
+Bit mask:      43548
+Dynamic:       43604
+Greedy:        43692
+Lazy Dynamic: 224064
+
+
+
+
+### 8. Интерпретация результатов
+- Greedy оказался самым быстрым, но Bitmask — самым медленным при росте входных данных. Dynamic Programming работает стабильнее и быстрее Lazy Dynamic, особенно на больших выборках. Greedy имеет наименьшее отклонение, что подтверждает его стабильность в скорости выполнения.
+- Большинство алгоритмов (Greedy, Dynamic, Bitmask, Recursion) имеют схожее потребление памяти (~42-43 MB). Похожие результаты по памяти для разных алгоритмов могут быть связаны с накладными расходами (инициализация Criterion, cоздание отчетов и графиков, cбор метрик). Lazy Dynamic выделяется значительно большим потреблением (в ~5 раз больше). Рекурсивный подход, вопреки ожиданиям, показал наименьшее потребление памяти. Это говорит о том, что ленивая динамика требует существенно больше памяти для кэширования результатов, в то время как остальные алгоритмы более эффективны в управлении памятью.
+
