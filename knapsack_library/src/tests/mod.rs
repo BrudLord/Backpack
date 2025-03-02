@@ -4,3 +4,6 @@ pub mod full_iteration_with_recursion_tests;
 pub mod full_iteration_with_bit_mask_tests;
 pub mod lazy_dynamic_tests;
 pub mod greedy_tests;
+pub mod branch_Bound_tests;
+pub mod meet_tests;
+pub mod FPTAS_tests;
